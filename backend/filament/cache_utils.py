@@ -15,10 +15,10 @@ async def cache_has_key(key):
 
 
 async def cache_get(key):
-    bsae64_encoded_value = await r.get(get_key(key))
-    if bsae64_encoded_value is None:
+    base64_encoded_value = await r.get(get_key(key))
+    if base64_encoded_value is None:
         return None
-    pickled_value = base64.b64decode(bsae64_encoded_value)
+    pickled_value = base64.b64decode(base64_encoded_value)
     return pickle.loads(pickled_value)
 
 
