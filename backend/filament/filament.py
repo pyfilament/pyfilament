@@ -97,7 +97,7 @@ class FilamentTaskConfig(FilamentBaseModel):
     monitor: bool = Field(default=True)
     monitor_interval: float | None = Field(default=1)
     max_concurrent: int | None = Field(default=None)
-    rate_limit: int | None = Field(default=None)
+    rate_limit: float | None = Field(default=None)
 
     def __init__(self, **kwargs):
         if 'retry_exceptions' in kwargs:
@@ -206,7 +206,7 @@ class FilamentTaskRun(FilamentBaseModel):
         bucket = RedisTokenBucket(
             name=f'filament_task_run:{self.type.func_address}',
             rate_limit=int(self.config.rate_limit * 100),
-            capacity=int(self.config.rate_limit * 200),
+            capacity=int(self.config.rate_limit * 400),
         )
         await bucket.acquire(tokens=100)
         yield
