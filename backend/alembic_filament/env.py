@@ -25,11 +25,13 @@ target_metadata = SQLModel.metadata
 # ... etc.
 
 
-from dotenv import dotenv_values
+import os
 
-dotenv_config = dotenv_values('.env')
+from dotenv import load_dotenv
 
-FILAMENT_DB_URI = dotenv_config.get('FILAMENT_DB_URI')
+dotenv_config = load_dotenv()
+
+FILAMENT_DB_URI = os.getenv('FILAMENT_DB_URI')
 
 # Set the SQLAlchemy URL in the config object
 config.set_main_option('sqlalchemy.url', FILAMENT_DB_URI)
