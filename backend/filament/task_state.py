@@ -22,7 +22,7 @@ def set_heartbeat(task_uuid):
     # r_sync.set(get_key(task_uuid), task_run.model_dump_json())
     with Session(engine) as session:
         statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).first()
+        task_run = session.exec(statement).one()
         task_run.heartbeat = get_utc_now()
         session.commit()
     # print(f"{now()} {task_run} heartbeat")
@@ -44,7 +44,7 @@ def create_task_type_state(func_address, name=None):
 def create_task_run_state(task_uuid, func_address, name=None, parameters=None):
     with Session(engine) as session:
         statement = select(TaskType).where(TaskType.func_address == func_address)
-        task_type = session.exec(statement).first()
+        task_type = session.exec(statement).one()
         if task_type is None:
             raise ValueError(f'No task type found for func_address {func_address}')
         task_run = TaskRun(name=name, task_uuid=task_uuid, task_type_id=task_type.id)
@@ -61,7 +61,7 @@ def transition_state(task_uuid, new_state):
     with Session(engine) as session:
         # task_run = TaskRun.model_validate_json(r_sync.get(get_key(task_uuid)))
         statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).first()
+        task_run = session.exec(statement).one()
         old_state = task_run.state
         if old_state == new_state:
             # logger.info(f'{task_run} already in state {new_state}')
@@ -82,7 +82,7 @@ def transition_state(task_uuid, new_state):
 def set_task_result(task_uuid, result, exception):
     with Session(engine) as session:
         statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).first()
+        task_run = session.exec(statement).one()
         if exception is not None:
             result = exception
         task_run.result_json = json.dumps(json_encode_safe(result), separators=(',', ':'), default=str)
@@ -92,7 +92,7 @@ def set_task_result(task_uuid, result, exception):
 def get_task_run(task_uuid):
     with Session(engine) as session:
         statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).first()
+        task_run = session.exec(statement).one()
         return task_run.model_dump()
 
 
@@ -103,7 +103,7 @@ def is_canceled(task_uuid):
     # return False
     with Session(engine) as session:
         statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).first()
+        task_run = session.exec(statement).one()
         return task_run.state == TaskState.CANCELLED
 
 
@@ -115,6 +115,6 @@ def set_parent_task_uuid(task_uuid, parent_task_uuid):
     # r_sync.set(get_key(task_uuid), task_run.model_dump_json())
     with Session(engine) as session:
         statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).first()
+        task_run = session.exec(statement).one()
         task_run.parent_task_uuid = parent_task_uuid
         session.commit()
