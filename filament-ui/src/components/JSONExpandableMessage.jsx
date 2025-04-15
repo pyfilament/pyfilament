@@ -38,7 +38,10 @@ function JSONExpandableMessage({ message, isExpanded: initIsExpanded, className,
     }
 
     const json = JSON.stringify(messageJson, null, 2);
-    const displayJson = preWrap(json, maxCharacters);
+    let displayJson = preWrap(json, maxCharacters);
+    while (displayJson.includes('\\n')) {
+        displayJson = displayJson.replace(/\\n/g, '\n');
+    }
     const displayMessage = preWrap(message, maxCharacters);
 
     return !isExpanded ? (
