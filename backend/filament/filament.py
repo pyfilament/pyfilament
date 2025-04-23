@@ -279,7 +279,8 @@ class FilamentTaskRun(FilamentBaseModel):
                 except anyio.get_cancelled_exc_class():
                     # do not attempt to retry if cancelled
                     raise
-                except retry_exc_types:
+                except retry_exc_types as e:
+                    self._logger.exception(e)
                     if i < self.config.tries - 1:
                         transition_state(self.uuid, TaskState.RETRYING)
                         if self.config.delay:
