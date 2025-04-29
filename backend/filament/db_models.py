@@ -6,7 +6,16 @@ from enum import Enum
 
 from dotenv import load_dotenv
 from pytz import timezone
-from sqlmodel import TIMESTAMP, Column, Field, Relationship, Session, SQLModel, create_engine, text
+from sqlalchemy.orm import declarative_base
+from sqlmodel import TIMESTAMP, Column, Field, Relationship, Session, create_engine, text
+from sqlmodel import SQLModel as BaseSQLModel
+
+Base = declarative_base()
+
+
+class SQLModel(BaseSQLModel, registry=Base.registry):
+    pass
+
 
 logger = logging.getLogger(__name__)
 
