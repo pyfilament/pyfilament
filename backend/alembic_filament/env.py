@@ -33,6 +33,8 @@ dotenv_config = load_dotenv()
 
 FILAMENT_DB_URI = os.getenv('FILAMENT_DB_URI')
 
+FILAMENT_DB_URI = FILAMENT_DB_URI.replace('%', '%%')
+
 # Set the SQLAlchemy URL in the config object
 config.set_main_option('sqlalchemy.url', FILAMENT_DB_URI)
 
