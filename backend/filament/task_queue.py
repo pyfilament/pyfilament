@@ -42,8 +42,46 @@ async def setup_queue(task_type):
 async def enqueue_task_run(filament_task_run):
     stream_name = get_stream_name(filament_task_run.type)
     logger.info(f'{filament_task_run.uuid} enqueuing to {stream_name} with data {filament_task_run.model_dump_json()}')
+    await cleanup_old_messages(stream_name)
     await r.xadd(stream_name, {'json_data': filament_task_run.model_dump_json()})
     logger.info(f'{filament_task_run.uuid} enqueued to {stream_name}')
+
+
+async def cleanup_old_messages(stream_name, stale_age=DEFAULT_STALE_TTL):
+    group_name = get_group_name()
+    num_deleted = await delete_stale_pending_messages(stream_name, group_name, stale_age)
+    while num_deleted > 0:
+        num_deleted = await delete_stale_pending_messages(stream_name, group_name, stale_age)
+    oldest_pending_messages = await r.xpending_range(stream_name, group_name, '-', '+', count=1)
+    if len(oldest_pending_messages) == 0:
+        logger.debug('No pending messages in stream, no need to cleanup')
+        return
+    oldest_pending_message = oldest_pending_messages[0]
+    logger.debug(f'{stream_name} oldest pending message: {oldest_pending_message}')
+    # trim all messages older than the oldest pending message
+    await r.xtrim(stream_name, minid=oldest_pending_message['message_id'])
+
+
+async def delete_stale_pending_messages(stream_name, group_name, stale_age=DEFAULT_STALE_TTL):
+    pending_info = await r.xpending(stream_name, group_name)
+    pending_count = pending_info['pending']
+    if pending_count == 0:
+        logger.debug('No pending messages in stream, no need to delete')
+        return 0
+    pending_messages = await r.xpending_range(stream_name, group_name, '-', '+', count=100)
+    num_deleted = 0
+    for message in pending_messages:
+        if message['time_since_delivered'] > stale_age:
+            logger.warning(f'{message["message_id"]} is stale, deleting')
+            await r.xack(stream_name, group_name, message['message_id'])
+            await r.xdel(stream_name, message['message_id'])
+            num_deleted += 1
+        else:
+            logger.debug(f'{message["message_id"]} is not stale, skipping')
+            break
+    if num_deleted > 0:
+        logger.info(f'{num_deleted} stale messages deleted from {stream_name}')
+    return num_deleted
 
 
 async def dequeue_task_run(task_type, worker_id):
