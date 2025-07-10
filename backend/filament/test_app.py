@@ -38,7 +38,10 @@ async def f(x):
 
 @task(max_concurrent=1)
 async def g():
-    await asyncio.sleep(10)
+    logger = get_logger()
+    logger.info('hello from g')
+    await asyncio.sleep(60)
+    logger.info('hello from g, done')
 
 
 @task

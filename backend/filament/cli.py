@@ -21,11 +21,14 @@ class Filament:
 
     def request(self, task_address, count=1):
         async def _request():
+            await lookup(task_address).request()
+
+        async def _request_all():
             async with anyio.create_task_group() as task_group:
                 for _ in range(count):
-                    task_group.start_soon(lookup(task_address).request)
+                    task_group.start_soon(_request)
 
-        anyio.run(_request)
+        anyio.run(_request_all)
 
     def call(self, task_address, *args, **kwargs):
         # async def _call():
