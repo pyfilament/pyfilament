@@ -5,6 +5,8 @@ from filament.redis_utils import r
 
 CACHE_KEY_PREFIX = 'cache:'
 
+DEFAULT_TTL = 3600
+
 
 def get_key(key):
     return f'{CACHE_KEY_PREFIX}{key}'
@@ -22,7 +24,7 @@ async def cache_get(key):
     return pickle.loads(pickled_value)
 
 
-async def cache_set(key, value, ttl=3600):
+async def cache_set(key, value, ttl=DEFAULT_TTL):
     pickled_value = pickle.dumps(value)
     base64_encoded_value = base64.b64encode(pickled_value).decode('utf-8')
     await r.set(get_key(key), base64_encoded_value, ex=ttl)
