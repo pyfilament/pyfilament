@@ -356,7 +356,7 @@ class FilamentTaskRun(FilamentBaseModel):
                                                         f'Unsupported function type: {get_function_type(self.type._func)}'
                                                     )
 
-                            return await __inner()
+                                    return await __inner()
 
                     self._result = await _inner()
         except Exception as e:
