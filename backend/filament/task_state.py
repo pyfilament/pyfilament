@@ -104,3 +104,10 @@ def set_parent_task_uuid(task_uuid, parent_task_uuid):
         task_run = session.exec(statement).one()
         task_run.parent_task_uuid = parent_task_uuid
         session.commit()
+
+
+def get_parent_task_uuid(task_uuid):
+    with Session(engine) as session:
+        statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
+        task_run = session.exec(statement).one_or_none()
+        return task_run.parent_task_uuid if task_run else None

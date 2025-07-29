@@ -12,7 +12,9 @@ from contextlib import asynccontextmanager, contextmanager
 from uuid import uuid4
 
 import anyio
+import sentry_sdk
 from pydantic import BaseModel, Field, PrivateAttr
+from sentry_sdk.integrations.logging import ignore_logger
 
 from filament.cache_keys import hash_cache_key
 from filament.cache_utils import (
@@ -39,6 +41,7 @@ from filament.task_state import (
     TaskState,
     create_task_run_state,
     create_task_type_state,
+    get_parent_task_uuid,
     is_canceled,
     set_heartbeat,
     set_parent_task_uuid,
@@ -104,6 +107,7 @@ class FilamentTaskConfig(FilamentBaseModel):
     monitor_interval: float | None = Field(default=1)
     max_concurrent: int | None = Field(default=None)
     rate_limit: float | None = Field(default=None)
+    disable_sentry: bool = Field(default=False)
 
     def __init__(self, **kwargs):
         if 'retry_exceptions' in kwargs:
@@ -166,10 +170,12 @@ class FilamentTaskRun(FilamentBaseModel):
         self._result_send, self._result_receive = anyio.create_memory_object_stream(math.inf)
         self._done_event = anyio.Event()
         self._task = None
-        self._logger = logging.getLogger(f'{self.type.func_address}:{self.uuid}')
+        logger_name = f'{self.type.func_address}:{self.uuid}'
+        self._logger = logging.getLogger(logger_name)
         _handler = RedisHandler()
         _handler.setFormatter(JSONFormatter())
         self._logger.addHandler(_handler)
+        ignore_logger(logger_name)  # use sentry_sdk.capture_exception instead
         # a little scary to run the task on init, in case there's a concurrent worker
         if self.config.start_immediately:
             self.start()
@@ -269,6 +275,26 @@ class FilamentTaskRun(FilamentBaseModel):
             transition_state(self.uuid, TaskState.FAILURE)
             raise
 
+    @contextmanager
+    def _sentry_context(self):
+        if self.config.disable_sentry:
+            yield
+        else:
+            has_parent_frame = get_parent_task_uuid(self.uuid) is not None
+            if has_parent_frame:
+                with sentry_sdk.start_span(op='filament.task_run', name=self.type.name):
+                    yield
+            else:
+                with sentry_sdk.new_scope() as scope:
+                    scope.set_tag('filament.task_run.uuid', self.uuid)
+                    scope.set_tag('filament.task_run.type.func_address', self.type.func_address)
+                    with scope.start_transaction(op='filament.task_run', name=self.type.name):
+                        try:
+                            yield
+                        except Exception as e:
+                            scope.capture_exception(e)
+                            raise
+
     def _retry(self, func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -327,38 +353,41 @@ class FilamentTaskRun(FilamentBaseModel):
 
     async def _call(self, task_group):
         try:
-            with self._transition_failure_state():
-                with self._transition_cancel_state():
+            with self._sentry_context():
+                with self._transition_failure_state():
+                    with self._transition_cancel_state():
 
-                    @self._retry
-                    async def _inner():
-                        async with self._acquire_semaphore():
-                            async with self._acquire_token_bucket():
-                                with self._transition_timeout_state():
+                        @self._retry
+                        async def _inner():
+                            async with self._acquire_semaphore():
+                                async with self._acquire_token_bucket():
+                                    with self._transition_timeout_state():
 
-                                    @self._cache_results
-                                    async def __inner():
-                                        with self._transition_running_state():
-                                            with self._register_frame():
-                                                if inspect.iscoroutinefunction(self.type._func):
-                                                    return await self.type._func(*self.task_args, **self.task_kwargs)
-                                                elif inspect.isasyncgenfunction(self.type._func):
-                                                    item = None
-                                                    async for item in self.type._func(
-                                                        *self.task_args, **self.task_kwargs
-                                                    ):
-                                                        await self._result_send.send(item)
-                                                    return item
-                                                elif inspect.isfunction(self.type._func):
-                                                    return self.type._func(*self.task_args, **self.task_kwargs)
-                                                else:
-                                                    raise TypeError(
-                                                        f'Unsupported function type: {get_function_type(self.type._func)}'
-                                                    )
+                                        @self._cache_results
+                                        async def __inner():
+                                            with self._transition_running_state():
+                                                with self._register_frame():
+                                                    if inspect.iscoroutinefunction(self.type._func):
+                                                        return await self.type._func(
+                                                            *self.task_args, **self.task_kwargs
+                                                        )
+                                                    elif inspect.isasyncgenfunction(self.type._func):
+                                                        item = None
+                                                        async for item in self.type._func(
+                                                            *self.task_args, **self.task_kwargs
+                                                        ):
+                                                            await self._result_send.send(item)
+                                                        return item
+                                                    elif inspect.isfunction(self.type._func):
+                                                        return self.type._func(*self.task_args, **self.task_kwargs)
+                                                    else:
+                                                        raise TypeError(
+                                                            f'Unsupported function type: {get_function_type(self.type._func)}'
+                                                        )
 
-                                    return await __inner()
+                                        return await __inner()
 
-                    self._result = await _inner()
+                        self._result = await _inner()
         except Exception as e:
             self._exception = e
         finally:
@@ -508,6 +537,7 @@ class FilamentTaskType(FilamentBaseModel):
         )
         self._func = _func
         self._logger = logging.getLogger(func_address)
+        ignore_logger(func_address)  # use sentry_sdk.capture_exception instead
 
     def model_post_init(self, __context):
         self._func = lookup_func(self.func_address)
