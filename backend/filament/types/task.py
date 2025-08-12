@@ -59,9 +59,16 @@ class TaskType:
     name: str | None
 
     @strawberry.field
-    async def task_runs(self) -> list[TaskRun]:
-        task_runs = sorted(self.task_runs, key=lambda x: x.created_at, reverse=True)
-        return task_runs[:99]
+    async def task_runs(self, info) -> list[TaskRun]:
+        session = info.context['session']
+        task_runs = (
+            session.query(TaskRunModel)
+            .where(TaskRunModel.task_type_id == self.id)
+            .order_by(TaskRunModel.created_at.desc())
+            .limit(99)
+            .all()
+        )
+        return task_runs
 
     @strawberry.field
     async def latest_task_run(self, info) -> TaskRun | None:
