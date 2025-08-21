@@ -115,7 +115,7 @@ def get_session(autoflush=True):
 
 
 @contextmanager
-def session_scope(uri=None, commit=True, autoflush=True):
+def session_scope(commit=True, autoflush=True):
     session = get_session(autoflush=autoflush)
     try:
         yield session
