@@ -121,7 +121,7 @@ def session_scope(commit=True, autoflush=True):
         yield session
         if commit:
             session.commit()
-    except:
+    except Exception:
         session.rollback()
         raise
     finally:
