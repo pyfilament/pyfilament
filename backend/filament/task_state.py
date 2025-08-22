@@ -1,9 +1,10 @@
 import json
 import logging
 
-from sqlmodel import Session, select, text
+from sqlalchemy import text
 
-from filament.db_models import TaskRun, TaskRunStateTransition, TaskState, TaskType, engine, get_utc_now
+from filament.db_models import TaskRun, TaskRunStateTransition, TaskState, TaskType, get_utc_now
+from filament.db_session import session_scope
 from filament.utils import json_encode_safe
 
 logger = logging.getLogger(__name__)
@@ -17,18 +18,18 @@ def get_key(key):
 
 
 def set_heartbeat(task_uuid):
-    with Session(engine) as session:
-        statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).one()
+    with session_scope() as session:
+        query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
+        task_run = query.one()
         task_run.heartbeat = get_utc_now()
         session.commit()
 
 
 def create_task_type_state(func_address, name=None):
-    with Session(engine) as session:
+    with session_scope() as session:
         session.execute(text('LOCK TABLE task_type IN EXCLUSIVE MODE'))
-        statement = select(TaskType).where(TaskType.func_address == func_address)
-        task_type = session.exec(statement).first()
+        query = session.query(TaskType).where(TaskType.func_address == func_address)
+        task_type = query.one_or_none()
         if task_type is not None:
             task_type.name = name
         else:
@@ -39,9 +40,9 @@ def create_task_type_state(func_address, name=None):
 
 
 def create_task_run_state(task_uuid, func_address, name=None, parameters=None):
-    with Session(engine) as session:
-        statement = select(TaskType).where(TaskType.func_address == func_address)
-        task_type = session.exec(statement).one()
+    with session_scope() as session:
+        query = session.query(TaskType).where(TaskType.func_address == func_address)
+        task_type = query.one_or_none()
         if task_type is None:
             raise ValueError(f'No task type found for func_address {func_address}')
         task_run = TaskRun(name=name, task_uuid=task_uuid, task_type_id=task_type.id)
@@ -54,9 +55,9 @@ def create_task_run_state(task_uuid, func_address, name=None, parameters=None):
 
 
 def transition_state(task_uuid, new_state):
-    with Session(engine) as session:
-        statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).one()
+    with session_scope() as session:
+        query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
+        task_run = query.one()
         old_state = task_run.state
         if old_state == new_state:
             # logger.info(f'{task_run} already in state {new_state}')
@@ -74,9 +75,9 @@ def transition_state(task_uuid, new_state):
 
 
 def set_task_result(task_uuid, result, exception):
-    with Session(engine) as session:
-        statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).one()
+    with session_scope() as session:
+        query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
+        task_run = query.one()
         if exception is not None:
             result = exception
         task_run.result_json = json.dumps(json_encode_safe(result), separators=(',', ':'), default=str)
@@ -84,30 +85,30 @@ def set_task_result(task_uuid, result, exception):
 
 
 def get_task_run(task_uuid):
-    with Session(engine) as session:
-        statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).one()
+    with session_scope() as session:
+        query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
+        task_run = query.one()
         return task_run.model_dump()
 
 
 def is_canceled(task_uuid):
-    with Session(engine) as session:
-        statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).one()
+    with session_scope() as session:
+        query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
+        task_run = query.one()
         return task_run.state == TaskState.CANCELLED
 
 
 def set_parent_task_uuid(task_uuid, parent_task_uuid):
     # logger.info(f"{task_uuid} set parent_task_uuid to {parent_task_uuid}")
-    with Session(engine) as session:
-        statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).one()
+    with session_scope() as session:
+        query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
+        task_run = query.one()
         task_run.parent_task_uuid = parent_task_uuid
         session.commit()
 
 
 def get_parent_task_uuid(task_uuid):
-    with Session(engine) as session:
-        statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-        task_run = session.exec(statement).one_or_none()
+    with session_scope() as session:
+        query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
+        task_run = query.one()
         return task_run.parent_task_uuid if task_run else None

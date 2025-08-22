@@ -1,6 +1,5 @@
 import datetime
 
-from sqlmodel import select
 from strawberry import ID
 from werkzeug.exceptions import BadRequest, NotFound
 
@@ -14,12 +13,12 @@ from filament.types.task import TaskRun, TaskType
 async def get_task_run(self, info, id: ID | None = None, task_uuid: str | None = None) -> TaskRun:
     session = info.context['session']
     if task_uuid is not None:
-        statement = select(TaskRunModel).where(TaskRunModel.task_uuid == task_uuid)
+        query = session.query(TaskRunModel).where(TaskRunModel.task_uuid == task_uuid)
     elif id is not None:
-        statement = select(TaskRunModel).where(TaskRunModel.id == id)
+        query = session.query(TaskRunModel).where(TaskRunModel.id == id)
     else:
         raise BadRequest('Either id or task_uuid must be provided')
-    task_run = session.exec(statement).first()
+    task_run = query.one_or_none()
     if not task_run:
         raise NotFound(f'TaskRun with UUID {task_uuid} not found')
     return task_run
@@ -28,12 +27,12 @@ async def get_task_run(self, info, id: ID | None = None, task_uuid: str | None =
 async def get_task_type(self, info, id: ID | None = None, func_address: str | None = None) -> TaskType:
     session = info.context['session']
     if func_address is not None:
-        statement = select(TaskTypeModel).where(TaskTypeModel.func_address == func_address)
+        query = session.query(TaskTypeModel).where(TaskTypeModel.func_address == func_address)
     elif id is not None:
-        statement = select(TaskTypeModel).where(TaskTypeModel.id == id)
+        query = session.query(TaskTypeModel).where(TaskTypeModel.id == id)
     else:
         raise BadRequest('Either id or func_address must be provided')
-    task_type = session.exec(statement).first()
+    task_type = query.one_or_none()
     if not task_type:
         raise NotFound(f'TaskType with func_address {func_address} not found')
     return task_type
@@ -50,12 +49,12 @@ async def get_task_types(self, info):
 async def cancel_task_run(self, info, id: ID | None = None, task_uuid: str | None = None) -> TaskRun:
     session = info.context['session']
     if task_uuid is not None:
-        statement = select(TaskRunModel).where(TaskRunModel.task_uuid == task_uuid)
+        query = session.query(TaskRunModel).where(TaskRunModel.task_uuid == task_uuid)
     elif id is not None:
-        statement = select(TaskRunModel).where(TaskRunModel.id == id)
+        query = session.query(TaskRunModel).where(TaskRunModel.id == id)
     else:
         raise BadRequest('Either id or task_uuid must be provided')
-    task_run = session.exec(statement).first()
+    task_run = query.one_or_none()
     if not task_run:
         raise NotFound(f'TaskRun with UUID {task_uuid} not found')
     _cancel_task_run(task_run)
