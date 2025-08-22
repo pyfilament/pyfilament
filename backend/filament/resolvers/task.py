@@ -4,9 +4,8 @@ from strawberry import ID
 from werkzeug.exceptions import BadRequest, NotFound
 
 from filament.db_models import TaskRun as TaskRunModel
-from filament.db_models import TaskState
 from filament.db_models import TaskType as TaskTypeModel
-from filament.task_state import transition_state
+from filament.logic.task_run import cancel_task_run as logic_cancel_task_run
 from filament.types.task import TaskRun, TaskType
 
 
@@ -57,17 +56,9 @@ async def cancel_task_run(self, info, id: ID | None = None, task_uuid: str | Non
     task_run = query.one_or_none()
     if not task_run:
         raise NotFound(f'TaskRun with UUID {task_uuid} not found')
-    _cancel_task_run(task_run)
+    logic_cancel_task_run(task_run)
     session.commit()
     return task_run
-
-
-def _cancel_task_run(task_run: TaskRunModel) -> TaskRunModel:
-    if task_run.state in TaskState.TERMINAL:
-        return task_run
-    transition_state(task_run.task_uuid, TaskState.CANCELLED)
-    for child_task_run in task_run.child_tasks:
-        _cancel_task_run(child_task_run)
 
 
 async def get_task_runs(self, info, task_type_id: ID, states: list[str] | None = None):
