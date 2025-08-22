@@ -8,7 +8,7 @@ import fire
 
 from filament.db_models import TaskRun, TaskState
 from filament.db_session import session_scope
-from filament.logic.task_run import cancel_task_run
+from filament.logic.task_run import cancel_task_run, delete_task_run
 
 
 def setup_logging():
@@ -35,8 +35,9 @@ def fire_task(async_fn):
 
 
 @fire_task
-async def main(stonith_max_heartbeat_seconds: int = 60 * 60):
+async def main(stonith_max_heartbeat_seconds: int = 60 * 60, delete_old_task_runs_days: int = 30):
     await stonith(max_heartbeat_seconds=stonith_max_heartbeat_seconds)
+    await delete_old_task_runs(days=delete_old_task_runs_days)
 
 
 async def stonith(max_heartbeat_seconds: int, batch_size: int = 100):
@@ -63,6 +64,24 @@ async def stonith(max_heartbeat_seconds: int, batch_size: int = 100):
                 session.flush()
             session.commit()
             logger.info(f'STONITHed {len(task_runs)} task runs, any heartbeat_age={any_age}')
+            await anyio.sleep(1)
+            if len(task_runs) < batch_size:
+                break
+
+
+async def delete_old_task_runs(days: int = 30, batch_size: int = 100):
+    with session_scope() as session:
+        while True:
+            query = session.query(TaskRun).where(TaskRun.created_at < datetime.now() - timedelta(days=days))
+            task_runs = query.limit(batch_size).all()
+            logger.info(f'Found {len(task_runs)} task runs to delete')
+            any_age = None
+            for task_run in task_runs:
+                delete_task_run(session, task_run)
+                if any_age is None:
+                    any_age = task_run.created_at
+            session.commit()
+            logger.info(f'Deleted {len(task_runs)} task runs, any_age={any_age}')
             await anyio.sleep(1)
             if len(task_runs) < batch_size:
                 break
