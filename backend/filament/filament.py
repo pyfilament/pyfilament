@@ -143,7 +143,11 @@ class FilamentTaskRun(FilamentBaseModel):
     ):
         for config_name in FilamentTaskConfig.model_fields.keys():
             if config_name in task_kwargs:
-                setattr(config, config_name, task_kwargs.pop(config_name))
+                config_value = task_kwargs[config_name]
+                signature = inspect.signature(type._func)
+                if config_name not in signature.parameters.keys():
+                    task_kwargs.pop(config_name)
+                setattr(config, config_name, config_value)
 
         if name is None:
             name = f'{type.name}({get_arg_name(*task_args, **task_kwargs)})'
