@@ -244,7 +244,8 @@ class FilamentTaskRun(FilamentBaseModel):
             async with semaphore:
                 yield
         except Exception as e:
-            self._logger.exception(f'Failed to acquire semaphore: {e}')
+            self._logger.error('Failed to acquire semaphore')
+            self._logger.exception(e)
             raise
 
     @contextmanager
