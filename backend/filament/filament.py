@@ -100,6 +100,7 @@ class FilamentTaskConfig(FilamentBaseModel):
     retry_exceptions: list['FilamentExceptionType'] = Field(default=[FilamentExceptionType(Exception)])
     cache: bool = Field(default=False)
     cache_key: 'FilamentCacheKey' = Field(default=FilamentCacheKey(hash_cache_key))
+    cache_ttl: int | None = Field(default=None)
     refresh_cache: bool = Field(default=False)
     heartbeat: bool = Field(default=True)
     heartbeat_interval: float | None = Field(default=1)
@@ -335,7 +336,7 @@ class FilamentTaskRun(FilamentBaseModel):
                 transition_state(self.uuid, TaskState.CACHED)
                 return result
             result = await func(*args, **kwargs)
-            await cache_set(key, result)
+            await cache_set(key, result, ttl=self.config.cache_ttl)
             return result
 
         return wrapper

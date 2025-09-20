@@ -24,7 +24,9 @@ async def cache_get(key):
     return pickle.loads(pickled_value)
 
 
-async def cache_set(key, value, ttl=DEFAULT_TTL):
+async def cache_set(key, value, ttl=None):
+    if ttl is None:
+        ttl = DEFAULT_TTL
     pickled_value = pickle.dumps(value)
     base64_encoded_value = base64.b64encode(pickled_value).decode('utf-8')
     await r.set(get_key(key), base64_encoded_value, ex=ttl)
