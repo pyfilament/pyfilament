@@ -396,6 +396,8 @@ class FilamentTaskRun(FilamentBaseModel):
                         self._result = await _inner()
         except Exception as e:
             self._exception = e
+        except anyio.get_cancelled_exc_class() as e:
+            self._exception = e
         finally:
             await self._result_send.aclose()
             self._done_event.set()
