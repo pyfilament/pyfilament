@@ -8,6 +8,7 @@ import math
 import pickle
 import random
 import traceback
+import types
 from contextlib import asynccontextmanager, contextmanager
 from uuid import uuid4
 
@@ -634,6 +635,11 @@ class FilamentTaskType(FilamentBaseModel):
         else:
             raise TypeError(f'Unsupported function type: {get_function_type(self._func)}')
 
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        return types.MethodType(self, instance)
+
 
 def get_logger():
     stack = inspect.stack()
@@ -685,31 +691,7 @@ def task(*wrapper_args, **wrapper_kwargs):
     ):
         task_type = FilamentTaskType(func, **wrapper_kwargs)
         TASK_TYPE_REGISTRY[task_type.func_address] = task_type
-        signature = inspect.signature(func)
-        arg_names = list(signature.parameters.keys())
-        if len(arg_names) > 0 and arg_names[0] == 'self':
-            # we must return a bound method
-            if inspect.iscoroutinefunction(func):
-
-                @functools.wraps(func)
-                async def wrapper(*args, **kwargs):
-                    return await task_type(*args, **kwargs)
-            elif inspect.isasyncgenfunction(func):
-
-                @functools.wraps(func)
-                async def wrapper(*args, **kwargs):
-                    async for item in task_type(*args, **kwargs):
-                        yield item
-            elif inspect.isfunction(func):
-
-                @functools.wraps(func)
-                def wrapper(*args, **kwargs):
-                    return task_type(*args, **kwargs)
-            else:
-                raise TypeError(f'Unsupported function type: {get_function_type(func)}')
-            return wrapper
-        else:
-            return task_type
+        return task_type
 
     get_wrapper = functools.partial(get_wrapper, **wrapper_kwargs)
     if func is not None:
