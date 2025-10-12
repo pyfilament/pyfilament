@@ -1,6 +1,7 @@
 import datetime
 import json
 
+from sqlalchemy.orm import aliased
 from strawberry import ID
 from werkzeug.exceptions import BadRequest, NotFound
 
@@ -37,6 +38,37 @@ async def get_task_type(self, info, id: ID | None = None, func_address: str | No
     if not task_type:
         raise NotFound(f'TaskType with id {id} or func_address {func_address} not found')
     return task_type
+
+
+async def get_task_types_by_ids(self, info, ids: list[int] | None = None, uuids: list[str] | None = None):
+    session = info.context['session']
+    if ids:
+        task_types = session.query(TaskTypeModel).where(TaskTypeModel.id.in_(ids)).all()
+        ids_to_task_types = {task_type.id: task_type for task_type in task_types}
+        task_types = [ids_to_task_types[id] for id in ids if id in ids_to_task_types]
+    elif uuids:
+        task_types = session.query(TaskTypeModel).where(TaskTypeModel.uuid.in_(uuids)).all()
+        uuids_to_task_types = {task_type.uuid: task_type for task_type in task_types}
+        task_types = [uuids_to_task_types[uuid] for uuid in uuids if uuid in uuids_to_task_types]
+    else:
+        raise BadRequest('Either ids or uuids must be provided')
+    return task_types
+
+
+async def get_task_type_stack_runs(self, info, task_type_ids: list[int]):
+    session = info.context['session']
+    assert len(task_type_ids) > 0, 'task_type_ids must be provided'
+    MAX_RESULTS = 100
+    final_task_type_id = task_type_ids[-1]
+    query = session.query(TaskRunModel).filter(TaskRunModel.task_type_id == final_task_type_id)
+    last_model = TaskRunModel
+    for task_type_id in reversed(task_type_ids[:-1]):
+        current_model = aliased(TaskRunModel)
+        query = query.join(current_model, last_model.parent_task_uuid == current_model.task_uuid)
+        query = query.where(current_model.task_type_id == task_type_id)
+        last_model = current_model
+    task_runs = query.where(last_model.parent_task_uuid.is_(None)).limit(MAX_RESULTS).all()
+    return task_runs
 
 
 async def get_task_types(self, info):

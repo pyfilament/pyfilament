@@ -151,6 +151,33 @@ const RUN_TASK = gql`
     }
 `;
 
+const GET_TASK_TYPES_BY_IDS = gql`
+    query GetTaskTypesByIds($ids: [Int!]!) {
+        getTaskTypesByIds(ids: $ids) {
+            id
+            name
+            funcAddress
+        }
+    }
+`;
+
+const GET_TASK_TYPE_STACK_RUNS = gql`
+    query GetTaskTypeStackRuns($taskTypeIds: [Int!]!) {
+        getTaskTypeStackRuns(taskTypeIds: $taskTypeIds) {
+            id
+            taskUuid
+            name
+            createdAt
+            state
+            stateSince
+            heartbeat
+            runCount
+            parentTaskUuid
+            parametersJson
+        }
+    }
+`;
+
 export {
     CANCEL_TASK_RUN,
     GET_TASK_RUN,
@@ -158,6 +185,8 @@ export {
     GET_TASK_RUN_LOGS,
     GET_TASK_RUNS,
     GET_TASK_TYPE,
+    GET_TASK_TYPE_STACK_RUNS,
     GET_TASK_TYPES,
+    GET_TASK_TYPES_BY_IDS,
     RUN_TASK,
 };

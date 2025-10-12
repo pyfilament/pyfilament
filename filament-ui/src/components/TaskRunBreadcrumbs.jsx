@@ -33,7 +33,13 @@ export default function TaskRunBreadcrumbs({ taskRun }) {
 
     return (
         <div className="flex flex-col gap-2 pb-4 text-neutral-500">
-            <LinkTo url="/">Filament</LinkTo>
+            <div className="flex items-center gap-2">
+                <LinkTo url="/">Filament</LinkTo>
+                <span>/</span>
+                <LinkTo url={`/task-type-stack/${breadcrumbs.map((taskRun) => taskRun.taskType.id).join(',')}`}>
+                    Stack
+                </LinkTo>
+            </div>
             {breadcrumbs.map((taskRun, index) => (
                 <div className="flex items-center gap-2 pl-4" key={taskRun.id}>
                     <span>/</span>

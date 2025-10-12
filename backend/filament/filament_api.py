@@ -55,6 +55,8 @@ class Query:
     get_task_type: TaskType = strawberry.field(resolver=task_resolver.get_task_type)
     get_task_types: list[TaskType] = strawberry.field(resolver=task_resolver.get_task_types)
     get_task_runs: list[TaskRun] = strawberry.field(resolver=task_resolver.get_task_runs)
+    get_task_types_by_ids: list[TaskType] = strawberry.field(resolver=task_resolver.get_task_types_by_ids)
+    get_task_type_stack_runs: list[TaskRun] = strawberry.field(resolver=task_resolver.get_task_type_stack_runs)
 
 
 @strawberry.type
