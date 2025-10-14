@@ -550,7 +550,7 @@ class FilamentTaskType(FilamentBaseModel):
 
     def model_post_init(self, __context):
         self._func = lookup_func(self.func_address)
-        create_task_type_state(self.func_address, name=self.name)
+        create_task_type_state(self.func_address, name=self.name, func=self._func)
 
     async def serve(self):
         worker_id = str(uuid4())

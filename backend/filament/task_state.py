@@ -1,6 +1,12 @@
+import inspect
 import json
 import logging
+from types import NoneType
+from typing import Optional
 
+import pydantic
+from beartype.door import TypeHint, UnionTypeHint
+from inflection import camelize
 from sqlalchemy import text
 
 from filament.db_models import TaskRun, TaskRunStateTransition, TaskState, TaskType, get_utc_now
@@ -25,18 +31,95 @@ def set_heartbeat(task_uuid):
         session.commit()
 
 
-def create_task_type_state(func_address, name=None):
+def create_task_type_state(func_address, name=None, func=None, class_=None):
     with session_scope() as session:
         session.execute(text('LOCK TABLE task_type IN EXCLUSIVE MODE'))
         query = session.query(TaskType).where(TaskType.func_address == func_address)
         task_type = query.one_or_none()
+        if func is not None:
+            input_json_schema = get_parameters_spec(func, name, class_)
+            output_json_schema = get_result_spec(func)
         if task_type is not None:
-            task_type.name = name
+            if name is not None:
+                task_type.name = name
+            if func is not None:
+                task_type.parameters_spec = input_json_schema
+                task_type.result_spec = output_json_schema
         else:
-            task_type = TaskType(name=name, func_address=func_address)
+            task_type = TaskType(
+                name=name, func_address=func_address, parameters_spec=input_json_schema, result_spec=output_json_schema
+            )
             session.add(task_type)
         session.commit()
     return task_type
+
+
+def is_pydantic_compatible(type_):
+    try:
+        pydantic.TypeAdapter(type_)
+        return True
+    except pydantic.errors.PydanticTypeError:
+        return False
+
+
+def is_optional(type_):
+    hint = TypeHint(type_)
+    return isinstance(hint, UnionTypeHint) and NoneType in hint.args
+
+
+def get_parameters_spec(func, func_name=None, class_=None) -> str | None:
+    if 'generate_writeup_text_element' in func.__name__:
+        pass
+    signature = inspect.signature(func)
+    allowed_types = {}
+    for param_name, param in signature.parameters.items():
+        is_required = param.default == param.empty
+        if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
+            continue
+        allowed_type = None
+        if param_name == 'self' and class_ is not None and issubclass(class_, pydantic.BaseModel):
+            allowed_type = class_
+        if param.annotation != inspect.Signature.empty:
+            input_type = param.annotation
+            if is_pydantic_compatible(input_type):
+                allowed_type = input_type
+        if allowed_type is not None:
+            if is_required:
+                allowed_types[param_name] = allowed_type
+            elif is_optional(allowed_type):
+                allowed_types[param_name] = allowed_type
+            else:
+                allowed_types[param_name] = Optional[allowed_type]
+        elif is_required:
+            if 'agentic' in func_name:
+                pass
+            return None
+
+    if func_name is None:
+        func_name = func.__name__
+
+    InputModel = pydantic.create_model(
+        f'{camelize(func_name)}InputModel',
+        __config__=pydantic.ConfigDict(use_attribute_docstrings=True, extra='forbid'),
+        **allowed_types,
+    )
+
+    try:
+        return json.dumps(InputModel.model_json_schema(), separators=(',', ':'), default=str)
+    except pydantic.errors.PydanticInvalidForJsonSchema:
+        return None
+
+
+def get_result_spec(func) -> str | None:
+    signature = inspect.signature(func)
+    if signature.return_annotation != inspect.Signature.empty:
+        output_format = signature.return_annotation
+        if issubclass(output_format, pydantic.BaseModel):
+            try:
+                return json.dumps(signature.return_annotation.model_json_schema(), separators=(',', ':'), default=str)
+            except pydantic.errors.PydanticInvalidForJsonSchema:
+                return None
+    return None
 
 
 def create_task_run_state(task_uuid, func_address, name=None, parameters=None):
