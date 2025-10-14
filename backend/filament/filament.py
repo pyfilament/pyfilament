@@ -594,7 +594,7 @@ class FilamentTaskType(FilamentBaseModel):
     def request(self, *task_args, **task_kwargs):
         return self._request(task_args, task_kwargs)
 
-    def _request(self, task_args: list, task_kwargs: dict) -> FilamentTaskRun:
+    def _request(self, task_args: tuple, task_kwargs: dict) -> FilamentTaskRun:
         task_run = FilamentRemoteTaskRun(
             type=self,
             task_args=task_args,
