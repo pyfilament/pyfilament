@@ -33,7 +33,7 @@ async def get_task_type(self, info, id: ID | None = None, func_address: str | No
         raise BadRequest('Either id or func_address must be provided')
     task_type = query.one_or_none()
     if not task_type:
-        raise NotFound(f'TaskType with func_address {func_address} not found')
+        raise NotFound(f'TaskType with id {id} or func_address {func_address} not found')
     return task_type
 
 
