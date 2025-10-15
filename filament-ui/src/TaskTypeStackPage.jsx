@@ -19,7 +19,7 @@ function TaskTypeStackPage() {
     const { taskTypeIds: taskTypeIdsString } = useParams();
     const taskTypeIds = taskTypeIdsString.split(',').map((id) => parseInt(id));
 
-    if (taskTypeIds.length == 0) {
+    if (taskTypeIds.length === 0) {
         return <p>No task type ids provided</p>;
     }
 

@@ -93,10 +93,13 @@ async def get_task_run(request: Request, task_run_id: int):
 async def get_task_runs(request: Request, task_run_ids_str: str):
     task_run_ids = [int(id) for id in task_run_ids_str.split(',')]
     with session_scope() as session:
-        task_runs = session.query(TaskRunModel).filter(TaskRunModel.id.in_(task_run_ids)).all()
-        task_runs_id_to_dict = {task_run.id: get_task_run_dict(task_run) for task_run in task_runs}
-        task_runs_list = [task_runs_id_to_dict[id] for id in task_run_ids]
-        return rename_keys_to_camel_case(task_runs_list)
+        task_runs = []
+        for task_run_id in task_run_ids:
+            task_run = session.get(TaskRunModel, task_run_id)
+            if task_run is None:
+                raise NotFound(f'TaskRun with ID {task_run_id} not found')
+            task_runs.append(get_task_run_dict(task_run))
+        return rename_keys_to_camel_case(task_runs)
 
 
 @app.get('/api/task-run/{task_run_id}/download')

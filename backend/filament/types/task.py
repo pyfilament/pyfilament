@@ -49,7 +49,7 @@ class TaskRun:
         while current.parent_task:
             task_runs_stack.append(current.parent_task)
             current = current.parent_task
-        return reversed(task_runs_stack)
+        return list(reversed(task_runs_stack))
 
 
 @strawberry.type

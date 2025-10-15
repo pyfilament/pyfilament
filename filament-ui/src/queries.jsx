@@ -162,8 +162,8 @@ const GET_TASK_TYPES_BY_IDS = gql`
 `;
 
 const GET_TASK_TYPE_STACK_RUNS = gql`
-    query GetTaskTypeStackRuns($taskTypeIds: [Int!]!) {
-        getTaskTypeStackRuns(taskTypeIds: $taskTypeIds) {
+    query GetTaskTypeStackRuns($taskTypeIds: [Int!]!, $states: [String!]!) {
+        getTaskTypeStackRuns(taskTypeIds: $taskTypeIds, states: $states) {
             id
             taskUuid
             name

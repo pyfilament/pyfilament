@@ -213,7 +213,7 @@ const TaskTimelineRow = ({
                                 relativeTo={relativeTo}
                                 isExpanded={
                                     taskRunStack !== null
-                                        ? taskRunStack.map((task) => task.id).includes(childTask.id)
+                                        ? taskRunStack.map((ancestorTask) => ancestorTask.id).includes(childTask.id)
                                         : null
                                 }
                                 taskRunStack={taskRunStack}

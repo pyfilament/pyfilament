@@ -29,10 +29,6 @@ export default function TaskRunsComparePage() {
 
     const getTaskRunsByIdsQuery = useQuery(GET_TASK_RUNS_BY_IDS, { variables: { ids: taskRunIds } });
 
-    if (taskRunIds.length == 0) {
-        return <p>No task run ids provided</p>;
-    }
-
     if (getTaskRunsByIdsQuery.loading || getTaskRunsByIdsQuery.error) {
         return <p>Error: {getTaskRunsByIdsQuery.error?.message}</p>;
     }
@@ -55,8 +51,8 @@ function getPathTo(parentTaskRun, taskRun) {
     for (let childIndex = 0; childIndex < parentTaskRun.childTasks.length; childIndex++) {
         const child = parentTaskRun.childTasks[childIndex];
         const path = getPathTo(child, taskRun);
-        const sibilingsOfType = parentTaskRun.childTasks.filter((sibling) => sibling.taskType.id === child.taskType.id);
-        const siblingIndex = sibilingsOfType.indexOf(child);
+        const siblingsOfType = parentTaskRun.childTasks.filter((sibling) => sibling.taskType.id === child.taskType.id);
+        const siblingIndex = siblingsOfType.indexOf(child);
         if (path !== null) {
             const node = {
                 siblingIndex: siblingIndex,
@@ -192,7 +188,6 @@ function _TaskRunsComparePage({ taskRuns }) {
                             return (
                                 <div key={targetTaskRunId} className="flex flex-1 flex-col">
                                     <ComparedTaskRunTimeline
-                                        key={targetTaskRunId}
                                         targetTaskRun={targetTaskRun}
                                         selectedTaskRun={selectedTaskRun}
                                         rootTaskRun={rootTaskRun}

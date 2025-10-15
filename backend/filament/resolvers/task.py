@@ -7,7 +7,7 @@ from werkzeug.exceptions import BadRequest, NotFound
 
 from filament.db_models import TaskRun as TaskRunModel
 from filament.db_models import TaskType as TaskTypeModel
-from filament.filament import FilamentTaskType, lookup
+from filament.filament import lookup
 from filament.logic.task_run import cancel_task_run as logic_cancel_task_run
 from filament.types.task import TaskRun, TaskType
 
@@ -40,7 +40,9 @@ async def get_task_type(self, info, id: ID | None = None, func_address: str | No
     return task_type
 
 
-async def get_task_types_by_ids(self, info, ids: list[int] | None = None, uuids: list[str] | None = None):
+async def get_task_types_by_ids(
+    self, info, ids: list[int] | None = None, uuids: list[str] | None = None
+) -> list[TaskType]:
     session = info.context['session']
     if ids:
         task_types = session.query(TaskTypeModel).where(TaskTypeModel.id.in_(ids)).all()
@@ -55,25 +57,42 @@ async def get_task_types_by_ids(self, info, ids: list[int] | None = None, uuids:
     return task_types
 
 
-async def get_task_type_stack_runs(self, info, task_type_ids: list[int]):
+async def get_task_type_stack_runs(
+    self, info, task_type_ids: list[int], states: list[str] | None = None
+) -> list[TaskRun]:
     session = info.context['session']
-    assert len(task_type_ids) > 0, 'task_type_ids must be provided'
+    if len(task_type_ids) == 0:
+        raise BadRequest('task_type_ids must be provided')
     MAX_RESULTS = 100
     final_task_type_id = task_type_ids[-1]
     query = session.query(TaskRunModel).filter(TaskRunModel.task_type_id == final_task_type_id)
+    if states:
+        query = query.where(TaskRunModel.state.in_(states))
     last_model = TaskRunModel
     for task_type_id in reversed(task_type_ids[:-1]):
         current_model = aliased(TaskRunModel)
         query = query.join(current_model, last_model.parent_task_uuid == current_model.task_uuid)
         query = query.where(current_model.task_type_id == task_type_id)
         last_model = current_model
-    task_runs = query.where(last_model.parent_task_uuid.is_(None)).limit(MAX_RESULTS).all()
+    task_runs = (
+        query.where(last_model.parent_task_uuid.is_(None))
+        .order_by(TaskRunModel.created_at.desc())
+        .limit(MAX_RESULTS)
+        .all()
+    )
     return task_runs
 
 
-async def get_task_runs_by_ids(self, info, ids: list[int]):
+async def get_task_runs_by_ids(self, info, ids: list[int]) -> list[TaskRun]:
     session = info.context['session']
-    task_runs = session.query(TaskRunModel).filter(TaskRunModel.id.in_(ids)).all()
+    if len(ids) == 0:
+        raise BadRequest('ids must be provided')
+    task_runs = []
+    for id in ids:
+        task_run = session.get(TaskRunModel, id)
+        if task_run is None:
+            raise NotFound(f'TaskRun with ID {id} not found')
+        task_runs.append(task_run)
     return task_runs
 
 
