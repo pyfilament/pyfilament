@@ -12,7 +12,7 @@ export default function TaskRunBreadcrumbs({ taskRun }) {
     const { refetch: refetchTaskRunBreadcrumb } = useQuery(GET_TASK_RUN_BREADCRUMB, { skip: true });
 
     const breadcrumbsQuery = useReactQuery({
-        queryKey: ['taskRun', taskRun.id],
+        queryKey: ['taskRun', 'breadcrumb', taskRun.id],
         queryFn: async () => {
             let ancestorTaskRuns = [taskRun];
             let currentTaskRun = taskRun;

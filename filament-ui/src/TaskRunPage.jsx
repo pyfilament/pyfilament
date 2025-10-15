@@ -1,3 +1,4 @@
+import { useQuery } from '@apollo/client';
 import { useQuery as useReactQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
@@ -9,13 +10,35 @@ import TaskContext from '@/components/TaskContext';
 import TaskLogs from '@/components/TaskLogs';
 import TaskRunBreadcrumbs from '@/components/TaskRunBreadcrumbs';
 import TaskRunDetails from '@/components/TaskRunDetails';
+import { GET_TASK_RUN } from '@/queries';
 
-export default function TaskRunPage() {
+export default function TaskRunPageWithUuidRedirect() {
     const { taskRunId } = useParams();
+
+    if (taskRunId.match(/^[0-9]+$/)) {
+        return <TaskRunPageWithId taskRunId={taskRunId} />;
+    } else {
+        return <TaskRunPageWithUuid taskRunUuid={taskRunId} />;
+    }
+}
+
+function TaskRunPageWithUuid({ taskRunUuid }) {
+    const getTaskRunQuery = useQuery(GET_TASK_RUN, { variables: { taskUuid: taskRunUuid } });
+
+    if (getTaskRunQuery.loading || getTaskRunQuery.error) {
+        return <p>{getTaskRunQuery.loading ? 'Loading...' : `Error: ${getTaskRunQuery.error.message}`}</p>;
+    }
+
+    const taskRun = getTaskRunQuery.data.getTaskRun;
+
+    return <TaskRunPageWithId taskRunId={taskRun.id} />;
+}
+
+function TaskRunPageWithId({ taskRunId }) {
     const [selectedTask, setSelectedTask] = useState(null);
 
     const fetchTaskRunTree = useReactQuery({
-        queryKey: ['taskRun', taskRunId],
+        queryKey: ['taskRun', 'tree', taskRunId],
         queryFn: async () => {
             const response = await axios.get(`/api/task-run/${taskRunId}`);
             return response.data;
