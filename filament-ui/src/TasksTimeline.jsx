@@ -127,7 +127,7 @@ const TaskTimelineRow = ({ task, minStart, spannedDuration, relativeTo, isExpand
                         <div
                             style={{
                                 marginLeft: `${Math.round(left)}%`,
-                                width: `max(${Math.round(width)}%, 32px)`,
+                                width: `max(${Math.round(width)}%, 1px)`,
                                 height: '32px',
                             }}
                             className={cn('relative flex items-center', getTitleClass(task), getBorderClass(task), {
