@@ -126,8 +126,10 @@ def get_task_run_dict(task_run: TaskRunModel) -> dict:
     sorted_child_tasks = sorted(task_run.child_tasks, key=lambda x: x.id)
     task_run_dict['child_tasks'] = [get_task_run_dict(child_task_run) for child_task_run in sorted_child_tasks]
     sorted_state_transitions = sorted(task_run.state_transitions, key=lambda x: x.id)
-    task_run_dict['parameters_json'] = avoid_nans(task_run.parameters_json)
-    task_run_dict['result_json'] = avoid_nans(task_run.result_json)
+    if task_run.parameters_json is not None:
+        task_run_dict['parameters_json'] = avoid_nans(task_run.parameters_json)
+    if task_run.result_json is not None:
+        task_run_dict['result_json'] = avoid_nans(task_run.result_json)
     task_run_dict['state_transitions'] = [
         get_json_dict(state_transition) for state_transition in sorted_state_transitions
     ]
