@@ -27,6 +27,7 @@ from filament.func_registry import (
     lookup_func,
     register_func,
 )
+from filament.module_type_registry import lookup_module_type, register_module_type
 from filament.redis_handler import JSONFormatter, RedisHandler
 from filament.redis_semaphore import RedisSemaphore
 from filament.redis_token_bucket import RedisTokenBucket
@@ -71,11 +72,11 @@ class FilamentExceptionType(FilamentBaseModel):
 
     def __init__(self, exc_type=None, **kwargs):
         if exc_type is not None:
-            kwargs['exc_type_address'] = register_func(exc_type)
+            kwargs['exc_type_address'] = register_module_type(exc_type)
         super().__init__(**kwargs)
 
     def model_post_init(self, __context):
-        self._exc_type = lookup_func(self.exc_type_address)
+        self._exc_type = lookup_module_type(self.exc_type_address)
 
 
 class FilamentCacheKey(FilamentBaseModel):
@@ -84,11 +85,11 @@ class FilamentCacheKey(FilamentBaseModel):
 
     def __init__(self, func=None, **kwargs):
         if func is not None:
-            kwargs['func_address'] = register_func(func)
+            kwargs['func_address'] = register_module_type(func)
         super().__init__(**kwargs)
 
     def model_post_init(self, __context):
-        self._func = lookup_func(self.func_address)
+        self._func = lookup_module_type(self.func_address)
 
 
 class FilamentTaskConfig(FilamentBaseModel):
@@ -496,7 +497,7 @@ class FilamentTaskResult(FilamentBaseModel):
         if exception is not None:
             kwargs['exception_json'] = json.dumps(
                 {
-                    'type_address': register_func(type(exception)),
+                    'type_address': register_module_type(type(exception)),
                     'message': str(exception),
                     # "args": base64.b64encode(pickle.dumps(exception.args)).decode(),
                     'traceback': traceback.format_exc(),
@@ -509,7 +510,7 @@ class FilamentTaskResult(FilamentBaseModel):
             self._result = json.loads(self.result_json)
         if self.exception_json is not None:
             exception_dict = json.loads(self.exception_json)
-            exc_type = lookup_func(exception_dict['type_address'])
+            exc_type = lookup_module_type(exception_dict['type_address'])
             message = exception_dict['message']
             traceback = exception_dict['traceback']
             # self._exception = exc_type(message)
