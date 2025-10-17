@@ -21,9 +21,11 @@ export default function RunTaskForm({ taskType, taskRun = null, className = null
         if (formData) {
             setFormData(formData);
             setJsonString(JSON.stringify(formData, null, 2));
+            onChange?.(formData);
         } else {
             setFormData({});
             setJsonString('');
+            onChange?.({});
         }
     }, [taskRun]);
 
@@ -42,8 +44,10 @@ export default function RunTaskForm({ taskType, taskRun = null, className = null
     const onJsonStringChange = (e) => {
         setJsonString(e.target.value);
         try {
-            setFormData(JSON.parse(e.target.value));
+            const formData = JSON.parse(e.target.value);
+            setFormData(formData);
             setIsJsonStringValid(true);
+            onChange?.(formData);
         } catch (e) {
             setIsJsonStringValid(false);
         }
