@@ -16,7 +16,7 @@ const TasksTimeline = ({ taskRun, startTime = null, endTime = null, taskRunStack
     const spannedDuration = end - start;
 
     return (
-        <div className="flex max-h-[420px] flex-col gap-2 overflow-x-hidden overflow-y-auto pt-[1px]">
+        <div className="flex max-h-[420px] flex-col gap-2 overflow-y-auto overflow-x-hidden pt-[1px]">
             <TaskTimelineRow
                 key={taskRun.id}
                 task={taskRun}
@@ -179,7 +179,7 @@ const TaskTimelineRow = ({
                                 {titleRefDimensions && parentRefDimensions && (
                                     <div
                                         className={cn(
-                                            'pointer-events-none absolute top-0 left-0 outline outline-offset-[-1px]',
+                                            'pointer-events-none absolute left-0 top-0 outline outline-offset-[-1px]',
                                             getBorderClass(task)
                                         )}
                                         style={{
