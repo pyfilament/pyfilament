@@ -1,11 +1,9 @@
 import asyncio
-import base64
 import functools
 import inspect
 import json
 import logging
 import math
-import pickle
 import random
 import traceback
 import types
@@ -50,7 +48,7 @@ from filament.task_state import (
 from filament.task_state import (
     get_task_run as get_task_run_state,
 )
-from filament.utils import get_arg_name, get_function_type, json_encode_safe
+from filament.utils import get_function_type, json_encode_safe
 from filament.utils_dependency import (
     get_frame_task_run,
     register_frame,
@@ -573,13 +571,13 @@ class FilamentTaskType(FilamentBaseModel):
                             exception=exception,
                         )
                         await publish_task_result(task_result, is_final=False)
-                except Exception as e:
+                except (Exception, anyio.get_cancelled_exc_class()) as e:
                     exception = e
                     self._logger.exception(e)
             else:
                 try:
                     result = await filament_task_run
-                except Exception as e:
+                except (Exception, anyio.get_cancelled_exc_class()) as e:
                     exception = e
                     self._logger.exception(e)
             task_result = FilamentTaskResult(
