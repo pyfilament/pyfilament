@@ -555,11 +555,39 @@ class FilamentTaskType(FilamentBaseModel):
         self._func = func_entry.func
         create_task_type_state(func_entry, name=self.name)
 
-    async def serve(self):
+    async def _dequeue_task_run(
+        self, worker_id: str, shutdown_event: anyio.Event
+    ) -> tuple[str | None, str | None] | None:
+        message_id, filament_task_run_json = None, None
+        async with anyio.create_task_group() as task_group:
+
+            async def _dequeue_task_run(cancel_scope: anyio.CancelScope):
+                nonlocal message_id, filament_task_run_json
+                message_id, filament_task_run_json = await dequeue_task_run(self, worker_id)
+                cancel_scope.cancel()
+
+            async def _wait_for_shutdown(cancel_scope: anyio.CancelScope):
+                await shutdown_event.wait()
+                cancel_scope.cancel()
+
+            task_group.start_soon(_dequeue_task_run, task_group.cancel_scope)
+            task_group.start_soon(_wait_for_shutdown, task_group.cancel_scope)
+        if shutdown_event.is_set():
+            self._logger.info(f'Worker {worker_id} shutting down...')
+            return None
+        return message_id, filament_task_run_json
+
+    async def serve(self, shutdown_event: anyio.Event):
         worker_id = str(uuid4())
         await setup_queue(self)
-        while True:
-            message_id, filament_task_run_json = await dequeue_task_run(self, worker_id)
+        while not shutdown_event.is_set():
+            dequeue_result = await self._dequeue_task_run(worker_id, shutdown_event)
+            if dequeue_result is None:
+                return None
+            message_id, filament_task_run_json = dequeue_result
+            if message_id is None or filament_task_run_json is None:
+                self._logger.error(f'Bad dequeue result: {dequeue_result}')
+                continue
             try:
                 filament_task_run = FilamentTaskRun.model_validate_json(filament_task_run_json)
                 filament_task_run.config.propagate = True  # always propagate so we can catch and serialize
