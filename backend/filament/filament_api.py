@@ -79,18 +79,18 @@ async def root():
 
 
 @app.get('/api/task-run/{task_run_id}')
-async def get_task_run(request: Request, task_run_id: int):
+async def get_task_run(request: Request, task_run_id: int, max_child_tasks: int = 100):
     with session_scope() as session:
         task_run = session.get(TaskRunModel, task_run_id)
         if task_run is None:
             raise NotFound(f'TaskRun with ID {task_run_id} not found')
-        task_run_dict = get_task_run_dict(task_run)
+        task_run_dict = get_task_run_dict(task_run, max_child_tasks)
 
     return rename_keys_to_camel_case(task_run_dict)
 
 
 @app.get('/api/task-runs/{task_run_ids_str}')
-async def get_task_runs(request: Request, task_run_ids_str: str):
+async def get_task_runs(request: Request, task_run_ids_str: str, max_child_tasks: int = 100):
     task_run_ids = [int(id) for id in task_run_ids_str.split(',')]
     with session_scope() as session:
         task_runs = []
@@ -98,17 +98,17 @@ async def get_task_runs(request: Request, task_run_ids_str: str):
             task_run = session.get(TaskRunModel, task_run_id)
             if task_run is None:
                 raise NotFound(f'TaskRun with ID {task_run_id} not found')
-            task_runs.append(get_task_run_dict(task_run))
+            task_runs.append(get_task_run_dict(task_run, max_child_tasks))
         return rename_keys_to_camel_case(task_runs)
 
 
 @app.get('/api/task-run/{task_run_id}/download')
-async def download_task_run(request: Request, task_run_id: int):
+async def download_task_run(request: Request, task_run_id: int, max_child_tasks: int = 100):
     with session_scope() as session:
         task_run = session.get(TaskRunModel, task_run_id)
         if task_run is None:
             raise NotFound(f'TaskRun with ID {task_run_id} not found')
-        task_run_dict = get_task_run_dict(task_run)
+        task_run_dict = get_task_run_dict(task_run, max_child_tasks)
 
     file_content = json.dumps(rename_keys_to_camel_case(task_run_dict), indent=2).encode('utf-8')
     filename = f'task_run_{task_run_id}.json'
@@ -120,11 +120,13 @@ async def download_task_run(request: Request, task_run_id: int):
     )
 
 
-def get_task_run_dict(task_run: TaskRunModel) -> dict:
+def get_task_run_dict(task_run: TaskRunModel, max_child_tasks: int = 100) -> dict:
     task_run_dict = get_json_dict(task_run)
     task_run_dict['task_type'] = get_json_dict(task_run.task_type)
     sorted_child_tasks = sorted(task_run.child_tasks, key=lambda x: x.id)
-    task_run_dict['child_tasks'] = [get_task_run_dict(child_task_run) for child_task_run in sorted_child_tasks[:100]]
+    task_run_dict['child_tasks'] = [
+        get_task_run_dict(child_task_run, max_child_tasks) for child_task_run in sorted_child_tasks[:max_child_tasks]
+    ]
     sorted_state_transitions = sorted(task_run.state_transitions, key=lambda x: x.id)
     if task_run.parameters_json is not None:
         task_run_dict['parameters_json'] = avoid_nans(task_run.parameters_json)
