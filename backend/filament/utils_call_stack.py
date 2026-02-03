@@ -15,6 +15,14 @@ def push_task_run(task_run: 'FilamentTaskRun'):
 
 
 # @beartype
+def pop_task_run():
+    current_stack = call_stack.get()
+    if len(current_stack) > 0:
+        new_stack = current_stack[:-1]
+        call_stack.set(new_stack)
+
+
+# @beartype
 def peek_task_run() -> Optional['FilamentTaskRun']:
     current_stack = call_stack.get()
     if len(current_stack) == 0:

@@ -49,7 +49,7 @@ from filament.task_state import (
     get_task_run as get_task_run_state,
 )
 from filament.utils import get_function_type, json_encode_safe
-from filament.utils_call_stack import peek_task_run, push_task_run
+from filament.utils_call_stack import peek_task_run, pop_task_run, push_task_run
 
 
 class FilamentBaseModel(BaseModel):
@@ -206,7 +206,10 @@ class FilamentTaskRun(FilamentBaseModel):
     @contextmanager
     def _register_frame(self):
         push_task_run(self)
-        yield
+        try:
+            yield
+        finally:
+            pop_task_run()
 
     @asynccontextmanager
     async def _acquire_token_bucket(self):
