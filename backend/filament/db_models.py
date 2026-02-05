@@ -64,6 +64,8 @@ class TaskRun(Base):
         Index('idx_task_run_created_at', created_at),
         Index('idx_task_run_state_since', state_since),
         Index('idx_task_run_id_task_type_id_created_at', id, task_type_id, created_at),
+        Index('idx_task_run_id_task_type_id_created_at_desc', id, task_type_id, created_at.desc()),
+        Index('idx_task_run_type_created_at_desc', task_type_id, created_at.desc()),
     )
 
 
