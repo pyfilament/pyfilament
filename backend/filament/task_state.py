@@ -176,7 +176,7 @@ def set_task_result(task_uuid, result, exception):
         session.commit()
 
 
-def get_task_run(task_uuid):
+def get_task_run_dict(task_uuid):
     with session_scope() as session:
         query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
         task_run = query.one()

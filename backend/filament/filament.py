@@ -39,14 +39,12 @@ from filament.task_state import (
     TaskState,
     create_task_run_state,
     get_parent_task_uuid,
+    get_task_run_dict,
     is_canceled,
     set_heartbeat,
     set_parent_task_uuid,
     set_task_result,
     transition_state,
-)
-from filament.task_state import (
-    get_task_run as get_task_run_state,
 )
 from filament.utils import get_function_type, json_encode_safe
 from filament.utils_call_stack import peek_task_run, pop_task_run, push_task_run
@@ -670,7 +668,7 @@ def get_logger():
     return logging.getLogger(f'{parent_frame_module_name}:{parent_frame_func_name}')
 
 
-def get_task_run():
+def get_current_task_run():
     task_run = peek_task_run()
     if task_run is not None:
         return task_run
@@ -765,7 +763,7 @@ async def generate_remote_task_run_results(task_uuid, propagate=False, check_sta
 
 async def wait_for_task(task_uuid, check_state_interval=1):
     while True:
-        task_run = get_task_run_state(task_uuid)
+        task_run = get_task_run_dict(task_uuid)
         if task_run['state'] in TaskState.TERMINAL:
             break
         await anyio.sleep(check_state_interval)
