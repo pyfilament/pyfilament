@@ -40,8 +40,8 @@
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.1.18",
-        "@types/node": "^22.19.7",
-        "@types/react": "^19.2.10",
+        "@types/node": "^22.19.9",
+        "@types/react": "^19.2.13",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react-swc": "^3.11.0",
         "globals": "^15.15.0",
