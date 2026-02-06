@@ -32,7 +32,7 @@ def get_current_task_run() -> FilamentTaskRun:
 
 
 @beartype
-def cancel_task_run_by_uuid(task_uuid: str) -> None:
+async def cancel_task_run_by_uuid(task_uuid: str) -> None:
     with session_scope() as session:
         query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
         task_run = query.one_or_none()
