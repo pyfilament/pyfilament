@@ -3,7 +3,8 @@ from beartype import beartype
 TASK_TYPE_REGISTRY = {}
 
 
-def register(task_type):
+@beartype
+def register(task_type) -> None:
     TASK_TYPE_REGISTRY[task_type.func_address] = task_type
 
 

@@ -23,6 +23,7 @@ from filament.cache_utils import (
     cache_set,
 )
 from filament.func_registry import lookup_func_entry, register_func
+from filament.logic.task_type_registry import register as register_task_type
 from filament.module_type_registry import lookup_module_type, register_module_type
 from filament.redis_handler import JSONFormatter, RedisHandler
 from filament.redis_semaphore import RedisSemaphore
@@ -675,9 +676,6 @@ def detect_dependency(task_uuid):
         set_parent_task_uuid(task_uuid, parent_task_run.uuid)
 
 
-TASK_TYPE_REGISTRY = {}
-
-
 def task(*wrapper_args, **wrapper_kwargs):
     func = None
     if len(wrapper_args) == 1 and callable(wrapper_args[0]):
@@ -688,7 +686,7 @@ def task(*wrapper_args, **wrapper_kwargs):
         **wrapper_kwargs,
     ):
         task_type = FilamentTaskType(func, **wrapper_kwargs)
-        TASK_TYPE_REGISTRY[task_type.func_address] = task_type
+        register_task_type(task_type)
         return task_type
 
     get_wrapper = functools.partial(get_wrapper, **wrapper_kwargs)
