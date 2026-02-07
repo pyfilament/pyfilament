@@ -26,7 +26,9 @@ def with_session(func: Callable) -> Callable:
     if inspect.iscoroutinefunction(func) or inspect.isasyncgenfunction(func):
 
         async def wrapper(*args, **kwargs):
-            if 'session' in kwargs and kwargs['session'] is not None or len(args) > 0 and isinstance(args[0], Session):
+            if ('session' in kwargs and kwargs['session'] is not None) or (
+                len(args) > 0 and isinstance(args[0], Session)
+            ):
                 return await func(*args, **kwargs)
             else:
                 with session_scope() as session:
@@ -34,7 +36,9 @@ def with_session(func: Callable) -> Callable:
     else:
 
         def wrapper(*args, **kwargs):
-            if 'session' in kwargs and kwargs['session'] is not None or len(args) > 0 and isinstance(args[0], Session):
+            if ('session' in kwargs and kwargs['session'] is not None) or (
+                len(args) > 0 and isinstance(args[0], Session)
+            ):
                 return func(*args, **kwargs)
             else:
                 with session_scope() as session:
