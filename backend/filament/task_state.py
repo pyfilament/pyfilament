@@ -52,16 +52,16 @@ def get_key(key: str) -> str:
     return f'{REDIS_KEY_PREFIX}{key}'
 
 
-@beartype
 @with_session
+@beartype
 def set_heartbeat(session: Session, task_uuid: str) -> None:
     query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = query.one()
     task_run.heartbeat = get_utc_now()
 
 
-@beartype
 @with_session
+@beartype
 async def create_task_type_state(session: Session, func_entry: FuncRegistryEntry, name: str | None = None) -> None:
     input_json_schema = get_parameters_spec(func_entry, name)
     output_json_schema = get_result_spec(func_entry)
@@ -153,8 +153,8 @@ def get_result_spec(func_entry: FuncRegistryEntry) -> str | None:
     return None
 
 
-@beartype
 @with_session
+@beartype
 def create_task_run_state(
     session: Session, task_uuid: str, func_address: str, name: str | None = None, parameters: dict | None = None
 ) -> None:
@@ -168,8 +168,8 @@ def create_task_run_state(
     session.add(task_run)
 
 
-@beartype
 @with_session
+@beartype
 def transition_state(session: Session, task_uuid: str, new_state: TaskState) -> None:
     query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = query.one()
@@ -186,8 +186,8 @@ def transition_state(session: Session, task_uuid: str, new_state: TaskState) -> 
     session.add(transition)
 
 
-@beartype
 @with_session
+@beartype
 def set_task_result(session: Session, task_uuid: str, result: Any, exception: BaseException | None = None) -> None:
     query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = query.one()
@@ -196,32 +196,32 @@ def set_task_result(session: Session, task_uuid: str, result: Any, exception: Ba
     task_run.result_json = json.dumps(json_encode_safe(result), separators=(',', ':'), default=str)
 
 
-@beartype
 @with_session
+@beartype
 async def get_task_run_dict(session: Session, task_uuid: str) -> dict:
     query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = query.one()
     return get_json_dict(task_run)
 
 
-@beartype
 @with_session
+@beartype
 def is_canceled(session: Session, task_uuid: str) -> bool:
     query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = query.one()
     return task_run.state == TaskState.CANCELLED
 
 
-@beartype
 @with_session
+@beartype
 def set_parent_task_uuid(session: Session, task_uuid: str, parent_task_uuid: str) -> None:
     query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = query.one()
     task_run.parent_task_uuid = parent_task_uuid
 
 
-@beartype
 @with_session
+@beartype
 def get_parent_task_uuid(session: Session, task_uuid: str) -> str | None:
     query = session.query(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = query.one_or_none()
