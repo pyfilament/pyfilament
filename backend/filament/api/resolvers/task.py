@@ -13,6 +13,8 @@ from filament.logic.task_run import cancel_task_run as logic_cancel_task_run
 from filament.logic.task_type_registry import lookup
 from filament.types.task import TaskRun, TaskType
 
+DEFAULT_MAX_DAYS = 3
+
 
 async def get_task_run(self, info, id: ID | None = None, task_uuid: str | None = None) -> TaskRun:
     session = info.context['session']
@@ -91,19 +93,20 @@ async def get_task_runs_by_ids(self, info, ids: list[int]) -> list[TaskRun]:
     session = info.context['session']
     if len(ids) == 0:
         raise BadRequest('ids must be provided')
-    task_runs = []
+    statement = select(TaskRunModel).where(TaskRunModel.id.in_(ids))
+    task_runs = (await session.execute(statement)).scalars().all()
+    ids_to_task_runs = {task_run.id: task_run for task_run in task_runs}
     for id in ids:
-        task_run = session.get(TaskRunModel, id)
-        if task_run is None:
+        if id not in ids_to_task_runs:
             raise NotFound(f'TaskRun with ID {id} not found')
-        task_runs.append(task_run)
+    task_runs = [ids_to_task_runs[id] for id in ids if id in ids_to_task_runs]
     return task_runs
 
 
-async def get_task_types(self, info):
+async def get_task_types(self, info, days: int = DEFAULT_MAX_DAYS):
     session = info.context['session']
     today = datetime.datetime.now()
-    before = today - datetime.timedelta(days=1)
+    before = today - datetime.timedelta(days=days)
     subquery = (
         select(TaskRunModel.task_type_id, func.max(TaskRunModel.id).label('task_run_id'))
         .filter(TaskRunModel.created_at > before)
@@ -133,10 +136,10 @@ async def cancel_task_run(self, info, id: ID | None = None, task_uuid: str | Non
     return task_run
 
 
-async def get_task_runs(self, info, task_type_id: ID, states: list[str] | None = None):
+async def get_task_runs(self, info, task_type_id: ID, states: list[str] | None = None, days: int = DEFAULT_MAX_DAYS):
     session = info.context['session']
     today = datetime.datetime.now()
-    before = today - datetime.timedelta(days=1)
+    before = today - datetime.timedelta(days=days)
     statement = (
         select(TaskRunModel)
         .where(TaskRunModel.task_type_id == int(task_type_id))
