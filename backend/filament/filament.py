@@ -282,7 +282,7 @@ class FilamentTaskRun(FilamentBaseModel):
         if self.config.disable_sentry:
             yield
         else:
-            has_parent_frame = await get_parent_task_run_uuid(self.uuid) is not None
+            has_parent_frame = (await get_parent_task_run_uuid(self.uuid)) is not None
             start_sentry_context = sentry_sdk.start_span if has_parent_frame else sentry_sdk.start_transaction
             with sentry_sdk.new_scope() as scope:
                 scope.set_tag('filament.task_run.uuid', self.uuid)
