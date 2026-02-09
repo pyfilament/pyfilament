@@ -641,19 +641,24 @@ class FilamentTaskType(FilamentBaseModel):
 
 @beartype
 async def initialize_task_run_state(task_run: FilamentTaskRun) -> None:
-    async with async_session_scope() as session:
-        task_run_state = await get_task_run_state(session, task_run.uuid)
-        if task_run_state is None:
-            await create_task_run_state(
-                session=session,
-                task_uuid=task_run.uuid,
-                func_address=task_run.type.func_address,
-                name=task_run.name,
-                parameters=task_run._get_call_parameters(),
-            )
-            parent_task_run = peek_task_run()
-            if parent_task_run is not None:
-                await set_parent_task_uuid(session, task_run.uuid, parent_task_run.uuid)
+    # lock so that we're not interrupted if initialize_task_run_state is called concurrently
+    semaphore = RedisSemaphore(
+        name=f'filament_task_run:initialize_task_run_state:{task_run.uuid}', max_leases=1, ttl=60
+    )
+    async with semaphore:
+        async with async_session_scope() as session:
+            task_run_state = await get_task_run_state(session, task_run.uuid)
+            if task_run_state is None:
+                await create_task_run_state(
+                    session=session,
+                    task_uuid=task_run.uuid,
+                    func_address=task_run.type.func_address,
+                    name=task_run.name,
+                    parameters=task_run._get_call_parameters(),
+                )
+                parent_task_run = peek_task_run()
+                if parent_task_run is not None:
+                    await set_parent_task_uuid(session, task_run.uuid, parent_task_run.uuid)
 
 
 def get_logger():
