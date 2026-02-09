@@ -5,7 +5,7 @@ from filament.task_state import transition_state
 async def cancel_task_run(session, task_run: TaskRun):
     if task_run.state in TaskState.TERMINAL:
         return task_run
-    await transition_state(task_run.task_uuid, TaskState.CANCELLED)
+    await transition_state(session, task_run.task_uuid, TaskState.CANCELLED)
     for child_task_run in await task_run.awaitable_attrs.child_tasks:
         await cancel_task_run(session, child_task_run)
 
