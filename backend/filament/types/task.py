@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 import strawberry
+from strawberry import Info
 from sqlalchemy import select
 
 from filament.db_models import TaskRun as TaskRunModel
@@ -96,7 +97,7 @@ class TaskType:
     result_spec: str | None
 
     @strawberry.field
-    async def task_runs(self, info) -> list[TaskRun]:
+    async def task_runs(self, info: Info) -> list[TaskRun]:
         session = info.context['session']
         statement = (
             select(TaskRunModel)
@@ -108,7 +109,7 @@ class TaskType:
         return task_runs
 
     @strawberry.field
-    async def latest_task_run(self, info) -> TaskRun | None:
+    async def latest_task_run(self, info: Info) -> TaskRun | None:
         session = info.context['session']
         statement = (
             select(TaskRunModel)

@@ -4,7 +4,7 @@ import json
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
-from strawberry import ID
+from strawberry import ID, Info
 from werkzeug.exceptions import BadRequest, NotFound
 
 from filament.db_models import TaskRun as TaskRunModel
@@ -16,7 +16,7 @@ from filament.types.task import TaskRun, TaskType
 DEFAULT_MAX_DAYS = 3
 
 
-async def get_task_run(self, info, id: ID | None = None, task_uuid: str | None = None) -> TaskRun:
+async def get_task_run(self, info: Info, id: ID | None = None, task_uuid: str | None = None) -> TaskRun:
     session = info.context['session']
     if task_uuid is not None:
         statement = select(TaskRunModel).where(TaskRunModel.task_uuid == task_uuid)
@@ -30,7 +30,7 @@ async def get_task_run(self, info, id: ID | None = None, task_uuid: str | None =
     return task_run
 
 
-async def get_task_type(self, info, id: ID | None = None, func_address: str | None = None) -> TaskType:
+async def get_task_type(self, info: Info, id: ID | None = None, func_address: str | None = None) -> TaskType:
     session = info.context['session']
     if func_address is not None:
         statement = select(TaskTypeModel).where(TaskTypeModel.func_address == func_address)
@@ -45,7 +45,7 @@ async def get_task_type(self, info, id: ID | None = None, func_address: str | No
 
 
 async def get_task_types_by_ids(
-    self, info, ids: list[int] | None = None, uuids: list[str] | None = None
+    self, info: Info, ids: list[int] | None = None, uuids: list[str] | None = None
 ) -> list[TaskType]:
     session = info.context['session']
     if ids:
@@ -64,7 +64,7 @@ async def get_task_types_by_ids(
 
 
 async def get_task_type_stack_runs(
-    self, info, task_type_ids: list[int], states: list[str] | None = None
+    self, info: Info, task_type_ids: list[int], states: list[str] | None = None
 ) -> list[TaskRun]:
     session = info.context['session']
     if len(task_type_ids) == 0:
@@ -89,7 +89,7 @@ async def get_task_type_stack_runs(
     return task_runs
 
 
-async def get_task_runs_by_ids(self, info, ids: list[int]) -> list[TaskRun]:
+async def get_task_runs_by_ids(self, info: Info, ids: list[int]) -> list[TaskRun]:
     session = info.context['session']
     if len(ids) == 0:
         raise BadRequest('ids must be provided')
@@ -103,7 +103,7 @@ async def get_task_runs_by_ids(self, info, ids: list[int]) -> list[TaskRun]:
     return task_runs
 
 
-async def get_task_types(self, info, days: int = DEFAULT_MAX_DAYS):
+async def get_task_types(self, info: Info, days: int = DEFAULT_MAX_DAYS):
     session = info.context['session']
     today = datetime.datetime.now()
     before = today - datetime.timedelta(days=days)
@@ -121,7 +121,7 @@ async def get_task_types(self, info, days: int = DEFAULT_MAX_DAYS):
     return task_types
 
 
-async def cancel_task_run(self, info, id: ID | None = None, task_uuid: str | None = None) -> TaskRun:
+async def cancel_task_run(self, info: Info, id: ID | None = None, task_uuid: str | None = None) -> TaskRun:
     session = info.context['session']
     if task_uuid is not None:
         statement = select(TaskRunModel).where(TaskRunModel.task_uuid == task_uuid)
@@ -136,7 +136,9 @@ async def cancel_task_run(self, info, id: ID | None = None, task_uuid: str | Non
     return task_run
 
 
-async def get_task_runs(self, info, task_type_id: ID, states: list[str] | None = None, days: int = DEFAULT_MAX_DAYS):
+async def get_task_runs(
+    self, info: Info, task_type_id: ID, states: list[str] | None = None, days: int = DEFAULT_MAX_DAYS
+):
     session = info.context['session']
     today = datetime.datetime.now()
     before = today - datetime.timedelta(days=days)
@@ -152,7 +154,7 @@ async def get_task_runs(self, info, task_type_id: ID, states: list[str] | None =
     return task_runs
 
 
-async def run_task(self, info, task_type_id: ID, parameters_json: str) -> TaskRun:
+async def run_task(self, info: Info, task_type_id: ID, parameters_json: str) -> TaskRun:
     session = info.context['session']
     statement = select(TaskTypeModel).where(TaskTypeModel.id == int(task_type_id))
     task_type = (await session.execute(statement)).scalars().one()
