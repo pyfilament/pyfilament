@@ -60,7 +60,7 @@ class TaskRun(AsyncAttrs, Base):
     def __str__(self):
         return self.__repr__()
 
-    __table__args = (
+    __table_args__ = (
         Index('idx_task_run_state', state),
         Index('idx_task_run_created_at', created_at),
         Index('idx_task_run_state_since', state_since),
