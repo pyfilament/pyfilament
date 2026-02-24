@@ -12,7 +12,6 @@ import sqlalchemy as sa
 
 import pgvector.sqlalchemy
 
-import sqlmodel
 
 # revision identifiers, used by Alembic.
 revision: str = '99538300054a'
@@ -26,22 +25,22 @@ def upgrade() -> None:
     op.create_table('task_type',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=True),
-    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('func_address', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=False),
+    sa.Column('func_address', sa.VARCHAR(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('task_run',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=True),
-    sa.Column('task_uuid', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('state', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('task_uuid', sa.VARCHAR(), nullable=False),
+    sa.Column('name', sa.VARCHAR(), nullable=True),
+    sa.Column('state', sa.VARCHAR(), nullable=False),
     sa.Column('state_since', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.Column('heartbeat', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.Column('run_count', sa.Integer(), nullable=False),
-    sa.Column('parent_task_uuid', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('parameters_json', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('result_json', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('parent_task_uuid', sa.VARCHAR(), nullable=True),
+    sa.Column('parameters_json', sa.VARCHAR(), nullable=True),
+    sa.Column('result_json', sa.VARCHAR(), nullable=True),
     sa.Column('task_type_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['parent_task_uuid'], ['task_run.task_uuid'], ),
     sa.ForeignKeyConstraint(['task_type_id'], ['task_type.id'], ),
@@ -50,9 +49,9 @@ def upgrade() -> None:
     )
     op.create_table('task_run_state_transition',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('task_uuid', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('from_state', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('to_state', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('task_uuid', sa.VARCHAR(), nullable=False),
+    sa.Column('from_state', sa.VARCHAR(), nullable=False),
+    sa.Column('to_state', sa.VARCHAR(), nullable=False),
     sa.Column('state_since', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['task_uuid'], ['task_run.task_uuid'], ),
     sa.PrimaryKeyConstraint('id')

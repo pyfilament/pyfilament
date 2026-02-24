@@ -12,7 +12,6 @@ import sqlalchemy as sa
 
 import pgvector.sqlalchemy
 
-import sqlmodel
 
 # revision identifiers, used by Alembic.
 revision: str = '3e2df1e9f806'
