@@ -106,6 +106,8 @@ class FilamentTaskConfig(FilamentBaseModel):
     max_concurrent: int | None = Field(default=None)
     rate_limit: float | None = Field(default=None)
     disable_sentry: bool = Field(default=False)
+    is_redact_input: bool = Field(default=False)
+    is_redact_output: bool = Field(default=False)
 
     def __init__(self, **kwargs):
         if 'retry_exceptions' in kwargs:
@@ -402,7 +404,12 @@ class FilamentTaskRun(FilamentBaseModel):
         finally:
             await self._result_send.aclose()
             self._done_event.set()
-            await set_task_result(self.uuid, self._result, self._exception)
+            await set_task_result(
+                self.uuid,
+                self._result,
+                self._exception,
+                is_redact=self.config.is_redact_output,
+            )
             task_group.cancel_scope.cancel()
 
     async def call(self):
@@ -660,6 +667,7 @@ async def initialize_task_run_state(task_run: FilamentTaskRun) -> None:
                     func_address=task_run.type.func_address,
                     name=task_run.name,
                     parameters=task_run._get_call_parameters(),
+                    is_redact=task_run.config.is_redact_input,
                 )
                 parent_task_run = peek_task_run()
                 if parent_task_run is not None:

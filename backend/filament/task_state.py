@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from filament.db_models import TaskRun, TaskRunStateTransition, TaskState, TaskType, get_utc_now
 from filament.db_session import async_session_scope
 from filament.func_registry import FuncRegistryEntry
-from filament.utils import get_json_dict, json_encode_safe
+from filament.utils import get_json_dict, json_encode_safe, redact_strings
 
 logger = logging.getLogger(__name__)
 
@@ -171,15 +171,23 @@ async def get_task_run_dict(session: AsyncSession, task_uuid: str) -> dict | Non
 @with_session
 @beartype
 async def create_task_run_state(
-    session: AsyncSession, task_uuid: str, func_address: str, name: str | None = None, parameters: dict | None = None
+    session: AsyncSession,
+    task_uuid: str,
+    func_address: str,
+    name: str | None = None,
+    parameters: dict | None = None,
+    is_redact: bool = False,
 ) -> None:
     statement = select(TaskType).where(TaskType.func_address == func_address)
     task_type = (await session.execute(statement)).scalars().one_or_none()
     if task_type is None:
         raise ValueError(f'No task type found for func_address {func_address}')
     task_run = TaskRun(name=name, task_uuid=task_uuid, task_type_id=task_type.id)
+    encodable_parameters = json_encode_safe(parameters)
+    if is_redact:
+        encodable_parameters = redact_strings(encodable_parameters)
     if parameters is not None:
-        task_run.parameters_json = json.dumps(json_encode_safe(parameters), separators=(',', ':'), default=str)
+        task_run.parameters_json = json.dumps(encodable_parameters, separators=(',', ':'), default=str)
     session.add(task_run)
 
 
@@ -204,13 +212,20 @@ async def transition_state(session: AsyncSession, task_uuid: str, new_state: Tas
 @with_session
 @beartype
 async def set_task_result(
-    session: AsyncSession, task_uuid: str, result: Any, exception: BaseException | None = None
+    session: AsyncSession,
+    task_uuid: str,
+    result: Any,
+    exception: BaseException | None = None,
+    is_redact: bool = False,
 ) -> None:
     statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = (await session.execute(statement)).scalars().one()
     if exception is not None:
         result = exception
-    task_run.result_json = json.dumps(json_encode_safe(result), separators=(',', ':'), default=str)
+    encodable_result = json_encode_safe(result)
+    if is_redact:
+        encodable_result = redact_strings(encodable_result)
+    task_run.result_json = json.dumps(encodable_result, separators=(',', ':'), default=str)
 
 
 @with_session

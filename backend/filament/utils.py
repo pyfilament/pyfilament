@@ -163,3 +163,13 @@ class SafeJsonEncoder(json.JSONEncoder):
         if isinstance(obj, date):
             return obj.isoformat()
         return super().default(obj)
+
+
+def redact_strings(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: redact_strings(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [redact_strings(v) for v in obj]
+    if isinstance(obj, str):
+        return '*' * len(obj)
+    return obj
