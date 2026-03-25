@@ -3,11 +3,10 @@ import json
 import logging
 from functools import wraps
 from types import NoneType
-from typing import Any, Optional
 
 from beartype import beartype
 from beartype.door import TypeHint, UnionTypeHint
-from beartype.typing import Callable
+from beartype.typing import Any, Callable, Optional
 from inflection import camelize
 from pydantic import BaseModel, ConfigDict, TypeAdapter, create_model
 from pydantic.errors import PydanticInvalidForJsonSchema, PydanticSchemaGenerationError

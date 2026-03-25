@@ -8,9 +8,9 @@ from collections import defaultdict
 from dataclasses import fields as dataclasses_fields
 from dataclasses import is_dataclass
 from datetime import date, datetime
-from typing import Any
 
 from beartype import beartype
+from beartype.typing import Any
 from inflection import camelize
 from pandas import DataFrame as PandasDataFrame
 from polars import DataFrame as PolarsDataFrame

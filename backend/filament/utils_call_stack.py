@@ -1,5 +1,6 @@
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Optional
+
+from beartype.typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from filament.filament import FilamentTaskRun

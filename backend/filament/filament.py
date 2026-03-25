@@ -8,13 +8,13 @@ import random
 import traceback
 import types
 from contextlib import asynccontextmanager, contextmanager
-from typing import Optional, Union
 from uuid import uuid4
 
 import anyio
 import sentry_sdk
 from anyio.abc import TaskGroup
 from beartype import beartype
+from beartype.typing import Optional, Union
 from pydantic import BaseModel, Field, PrivateAttr
 from sentry_sdk.integrations.logging import ignore_logger
 
