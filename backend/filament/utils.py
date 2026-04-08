@@ -77,7 +77,7 @@ def json_encode_safe(obj, max_list_size=32, max_dict_size=64, max_bytes_size=102
     elif isinstance(obj, set) or isinstance(obj, tuple) or isinstance(obj, frozenset):
         return json_encode_safe(list(obj))
     elif isinstance(obj, BaseModel):
-        return obj.model_dump()
+        return json_encode_safe(obj.model_dump())
     elif isinstance(obj, defaultdict):
         return json_encode_safe(dict(obj))
     elif isinstance(obj, PandasDataFrame):
