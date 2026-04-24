@@ -1,12 +1,15 @@
-import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client';
+import { ApolloProvider } from '@apollo/client/react';
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const ApolloContext = ({ children }) => {
     const client = React.useMemo(() => {
         return new ApolloClient({
-            uri: '/graphql',
             cache: new InMemoryCache(),
+            link: new HttpLink({
+                uri: '/graphql',
+            }),
         });
     });
 
