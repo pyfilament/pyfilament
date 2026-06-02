@@ -95,6 +95,7 @@ class FilamentTaskConfig(FilamentBaseModel):
     delay: float = Field(default=0)
     backoff_base: float = Field(default=2)
     retry_exceptions: list['FilamentExceptionType'] = Field(default=[FilamentExceptionType(Exception)])
+    no_retry_exceptions: list['FilamentExceptionType'] = Field(default=[])
     cache: bool = Field(default=False)
     cache_key: 'FilamentCacheKey' = Field(default=FilamentCacheKey(hash_cache_key))
     cache_ttl: int | None = Field(default=None)
@@ -111,17 +112,22 @@ class FilamentTaskConfig(FilamentBaseModel):
 
     def __init__(self, **kwargs):
         if 'retry_exceptions' in kwargs:
-            kwargs['retry_exceptions'] = [
-                FilamentExceptionType(exc_type)
-                if isinstance(exc_type, type) and issubclass(exc_type, Exception)
-                else exc_type
-                for exc_type in kwargs['retry_exceptions']
-            ]
+            kwargs['retry_exceptions'] = self._get_retry_exc_types(kwargs['retry_exceptions'])
+        if 'no_retry_exceptions' in kwargs:
+            kwargs['no_retry_exceptions'] = self._get_retry_exc_types(kwargs['no_retry_exceptions'])
         if 'cache_key' in kwargs:
             kwargs['cache_key'] = (
                 FilamentCacheKey(kwargs['cache_key']) if callable(kwargs['cache_key']) else kwargs['cache_key']
             )
         super().__init__(**kwargs)
+
+    def _get_retry_exc_types(self, exception_types: list[type[Exception]]) -> list[FilamentExceptionType]:
+        return [
+            FilamentExceptionType(exc_type)
+            if isinstance(exc_type, type) and issubclass(exc_type, Exception)
+            else exc_type
+            for exc_type in exception_types
+        ]
 
 
 class FilamentTaskRun(FilamentBaseModel):
@@ -308,10 +314,13 @@ class FilamentTaskRun(FilamentBaseModel):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             retry_exc_types = tuple([exc_type._exc_type for exc_type in self.config.retry_exceptions])
+            no_retry_exc_types = tuple([exc_type._exc_type for exc_type in self.config.no_retry_exceptions])
             for i in range(self.config.tries):
                 try:
                     self._try_index = i
                     return await func(*args, **kwargs)
+                except no_retry_exc_types:
+                    raise
                 except anyio.get_cancelled_exc_class():
                     # do not attempt to retry if cancelled
                     raise
