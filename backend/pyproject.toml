@@ -1,0 +1,45 @@
+[tool.ruff]
+line-length = 120
+target-version = 'py314'
+
+[tool.ruff.format]
+quote-style = 'single'
+
+[tool.mypy]
+plugins = ['pydantic.mypy']
+disable_error_code = ['import-untyped', 'empty-body', 'prop-decorator']
+
+[tool.poetry]
+name = "pyfilament-io"
+version = "0.0.0"
+description = ""
+authors = ["James Wu <james@centauri-ai.tech>"]
+
+[tool.poetry.dependencies]
+python = "^3.14"
+sqlalchemy = "^2.0.50"
+alembic = "^1.18.4"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0.3"
+hupper = "^1.12.1"
+watchdog = "^6.0.0"
+ruff = "^0.15.16"
+mypy = "^1.20.2"
+pytest-asyncio = "^1.4.0"
+pytest-cov = "^7.1.0"
+diff-cover = "^10.3.0"
+coverage = "^7.14.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_test_loop_scope = "module"
+asyncio_default_fixture_loop_scope = "module"
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
