@@ -13,7 +13,7 @@
             },
             "args": ["filament.filament_api:app", "--port", "5006", "--reload", "--reload-dir", "filament"],
             "justMyCode": true,
-            "consoleTitle": "api",
+            "consoleTitle": "api"
         },
         {
             "name": "ui",
@@ -22,8 +22,8 @@
             "cwd": "${workspaceFolder}/ui",
             "runtimeExecutable": "npm",
             "runtimeArgs": ["run", "dev"],
-            "console": "integratedTerminal"
-            "consoleTitle": "ui",
+            "console": "integratedTerminal",
+            "consoleTitle": "ui"
         }
     ]
 }
