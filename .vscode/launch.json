@@ -5,13 +5,13 @@
             "name": "api",
             "type": "debugpy",
             "request": "launch",
-            "cwd": "${workspaceFolder}/src",
+            "cwd": "${workspaceFolder}",
             "program": "${command:python.interpreterPath}/../uvicorn",
             "env": {
                 "PYDEVD_DISABLE_FILE_VALIDATION": "1",
                 "PYTHONPATH": "${workspaceFolder}/src",
             },
-            "args": ["filament.filament_api:app", "--port", "5006", "--reload", "--reload-dir", "filament"],
+            "args": ["filament.api.main:app", "--port", "5006", "--reload", "--reload-dir", "src/"],
             "justMyCode": true,
             "consoleTitle": "api"
         },
