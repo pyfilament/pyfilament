@@ -1,4 +1,4 @@
-from beartype import beartype
+import sys
 from .base import FilamentBaseModel
 from .task_config import FilamentTaskConfig
 from .task_run import FilamentTaskRun
@@ -9,22 +9,36 @@ from .exception_type import FilamentExceptionType
 from .cache_key import FilamentCacheKey
 from .remote_exception import FilamentRemoteException
 
-__all__ = [
-    'FilamentBaseModel',
-    'FilamentTaskConfig',
-    'FilamentTaskRun',
-    'FilamentTaskResult',
-    'FilamentTaskType',
-    'FilamentRemoteTaskRun',
-    'FilamentExceptionType',
-    'FilamentCacheKey',
-    'FilamentRemoteException',
+
+MODELS = [
+    FilamentBaseModel,
+    FilamentTaskConfig,
+    FilamentTaskRun,
+    FilamentTaskResult,
+    FilamentTaskType,
+    FilamentRemoteTaskRun,
+    FilamentExceptionType,
+    FilamentCacheKey,
+    FilamentRemoteException,
 ]
 
-# resolves circular imports
+__all__ = [model.__name__ for model in MODELS]
 
-for model in FilamentBaseModel.__subclasses__():
-    model.model_rebuild()
+# resolve circular imports for pydantic and beartype
 
-# for class_ in FilamentBaseModel.__subclasses__():
-#     beartype(class_)
+
+def _export_models():
+    for to_model in MODELS:
+        to_module = sys.modules[to_model.__module__]
+        for from_model in MODELS:
+            if from_model is not to_model:
+                setattr(to_module, from_model.__name__, from_model)
+
+
+def _rebuild_models():
+    for model in FilamentBaseModel.__subclasses__():
+        model.model_rebuild()
+
+
+_export_models()
+_rebuild_models()

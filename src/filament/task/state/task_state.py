@@ -4,7 +4,7 @@ import logging
 from functools import wraps
 from types import NoneType
 
-# from beartype import beartype
+from beartype import beartype
 from beartype.door import TypeHint, UnionTypeHint
 from beartype.typing import Any, Callable, Optional
 from inflection import camelize
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 REDIS_KEY_PREFIX = 'task_run:'
 
 
-# @beartype
+@beartype
 def with_session(func: Callable) -> Callable:
     assert inspect.iscoroutinefunction(func) or inspect.isasyncgenfunction(func), 'Function must be asynchronous'
 
@@ -44,13 +44,13 @@ def with_session(func: Callable) -> Callable:
     return wrapper
 
 
-# @beartype
+@beartype
 def get_key(key: str) -> str:
     return f'{REDIS_KEY_PREFIX}{key}'
 
 
 @with_session
-# @beartype
+@beartype
 async def set_heartbeat(session: AsyncSession, task_uuid: str) -> None:
     statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = (await session.execute(statement)).scalars().one()
@@ -58,7 +58,7 @@ async def set_heartbeat(session: AsyncSession, task_uuid: str) -> None:
 
 
 @with_session
-# @beartype
+@beartype
 async def create_task_type_state(session: AsyncSession, func_entry: FuncRegistryEntry) -> None:
     name = func_entry.func_address
     input_json_schema = get_parameters_spec(func_entry, name)
@@ -82,7 +82,7 @@ async def create_task_type_state(session: AsyncSession, func_entry: FuncRegistry
         session.add(task_type)
 
 
-# @beartype
+@beartype
 def is_pydantic_compatible(type_: Any) -> bool:
     try:
         TypeAdapter(type_)
@@ -91,13 +91,13 @@ def is_pydantic_compatible(type_: Any) -> bool:
         return False
 
 
-# @beartype
+@beartype
 def is_optional(type_: Any) -> bool:
     hint = TypeHint(type_)
     return isinstance(hint, UnionTypeHint) and NoneType in hint.args
 
 
-# @beartype
+@beartype
 def get_parameters_spec(func_entry: FuncRegistryEntry, func_name: str | None = None) -> str | None:
     func, class_ = func_entry.func, func_entry.class_
     signature = inspect.signature(func)
@@ -138,7 +138,7 @@ def get_parameters_spec(func_entry: FuncRegistryEntry, func_name: str | None = N
         return None
 
 
-# @beartype
+@beartype
 def get_result_spec(func_entry: FuncRegistryEntry) -> str | None:
     signature = inspect.signature(func_entry.func)
     if signature.return_annotation != inspect.Signature.empty:
@@ -152,7 +152,7 @@ def get_result_spec(func_entry: FuncRegistryEntry) -> str | None:
 
 
 @with_session
-# @beartype
+@beartype
 async def get_task_run_state(session: AsyncSession, task_uuid: str) -> TaskRun | None:
     statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = (await session.execute(statement)).scalars().one_or_none()
@@ -160,7 +160,7 @@ async def get_task_run_state(session: AsyncSession, task_uuid: str) -> TaskRun |
 
 
 @with_session
-# @beartype
+@beartype
 async def get_task_run_dict(session: AsyncSession, task_uuid: str) -> dict | None:
     task_run = await get_task_run_state(session, task_uuid)
     if task_run is not None:
@@ -169,7 +169,7 @@ async def get_task_run_dict(session: AsyncSession, task_uuid: str) -> dict | Non
 
 
 @with_session
-# @beartype
+@beartype
 async def create_task_run_state(
     session: AsyncSession,
     task_uuid: str,
@@ -192,7 +192,7 @@ async def create_task_run_state(
 
 
 @with_session
-# @beartype
+@beartype
 async def transition_state(session: AsyncSession, task_uuid: str, new_state: TaskState) -> None:
     statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = (await session.execute(statement)).scalars().one()
@@ -210,7 +210,7 @@ async def transition_state(session: AsyncSession, task_uuid: str, new_state: Tas
 
 
 @with_session
-# @beartype
+@beartype
 async def set_task_result(
     session: AsyncSession,
     task_uuid: str,
@@ -229,7 +229,7 @@ async def set_task_result(
 
 
 @with_session
-# @beartype
+@beartype
 async def is_canceled(session: AsyncSession, task_uuid: str) -> bool:
     statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = (await session.execute(statement)).scalars().one()
@@ -237,7 +237,7 @@ async def is_canceled(session: AsyncSession, task_uuid: str) -> bool:
 
 
 @with_session
-# @beartype
+@beartype
 async def set_parent_task_uuid(session: AsyncSession, task_uuid: str, parent_task_uuid: str) -> None:
     statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = (await session.execute(statement)).scalars().one()
@@ -245,7 +245,7 @@ async def set_parent_task_uuid(session: AsyncSession, task_uuid: str, parent_tas
 
 
 @with_session
-# @beartype
+@beartype
 async def get_parent_task_run_uuid(session: AsyncSession, task_uuid: str) -> str | None:
     statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run = (await session.execute(statement)).scalars().one_or_none()

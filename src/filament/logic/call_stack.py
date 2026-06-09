@@ -1,9 +1,12 @@
+from beartype import beartype
 from typing import TYPE_CHECKING
 from beartype.typing import Optional
 from contextvars import ContextVar
 
 if TYPE_CHECKING:
-    from filament.task.types import FilamentTaskRun
+    from filament.task.types.task_run import FilamentTaskRun
+else:
+    FilamentTaskRun = 'filament.task.types.task_run.FilamentTaskRun'
 
 _call_stack = None
 
@@ -15,14 +18,14 @@ def _get_call_stack() -> ContextVar[list[FilamentTaskRun]]:
     return _call_stack
 
 
-# @beartype
+@beartype
 def push_task_run(task_run: FilamentTaskRun):
     current_stack = _get_call_stack().get()
     new_stack = current_stack + [task_run]
     _get_call_stack().set(new_stack)
 
 
-# @beartype
+@beartype
 def pop_task_run():
     current_stack = _get_call_stack().get()
     if len(current_stack) > 0:
@@ -30,7 +33,7 @@ def pop_task_run():
         _get_call_stack().set(new_stack)
 
 
-# @beartype
+@beartype
 def peek_task_run() -> Optional[FilamentTaskRun]:
     current_stack = _get_call_stack().get()
     if len(current_stack) == 0:

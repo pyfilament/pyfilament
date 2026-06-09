@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from beartype import beartype
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from filament.db.models import TaskRun, TaskState
@@ -16,9 +17,11 @@ from filament.logic.call_stack import peek_task_run
 
 if TYPE_CHECKING:
     from filament.task.types.task_run import FilamentTaskRun
+else:
+    FilamentTaskRun = 'filament.task.types.task_run.FilamentTaskRun'
 
 
-# @beartype
+@beartype
 async def initialize_task_run_state(task_run: FilamentTaskRun) -> None:
     # lock so that we're not interrupted if initialize_task_run_state is called concurrently
     semaphore = RedisSemaphore(
@@ -41,7 +44,7 @@ async def initialize_task_run_state(task_run: FilamentTaskRun) -> None:
                     await set_parent_task_uuid(session, task_run.uuid, parent_task_run.uuid)
 
 
-# @beartype
+@beartype
 async def cancel_task_run(session: AsyncSession, task_run: TaskRun):
     if task_run.state in TaskState.TERMINAL:
         return task_run
@@ -50,7 +53,7 @@ async def cancel_task_run(session: AsyncSession, task_run: TaskRun):
         await cancel_task_run(session, child_task_run)
 
 
-# @beartype
+@beartype
 async def delete_task_run(session: AsyncSession, task_run: TaskRun):
     for child_task_run in await task_run.awaitable_attrs.child_tasks:
         await delete_task_run(session, child_task_run)
