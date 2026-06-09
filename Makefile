@@ -12,3 +12,6 @@ upgrade:
 
 lint:
 	poetry run ruff check src/ --ignore F401,E402,E731,F841,F403,E712,E722,E711,F541
+
+test:
+	poetry run pytest
