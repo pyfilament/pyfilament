@@ -7,7 +7,7 @@ from filament.task.registry.task_type_registry import register as register_task_
 from filament.logic.call_stack import peek_task_run
 
 
-from filament.task.types.task_type import FilamentTaskType
+from filament.queue.types.remote_task_type import FilamentRemoteTaskType
 
 
 def get_logger():
@@ -30,7 +30,7 @@ def task(*wrapper_args, **wrapper_kwargs):
         func,
         **wrapper_kwargs,
     ):
-        task_type = FilamentTaskType(func, **wrapper_kwargs)
+        task_type = FilamentRemoteTaskType(func, **wrapper_kwargs)
         register_task_type(task_type)
         return task_type
 

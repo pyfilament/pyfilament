@@ -10,13 +10,13 @@ from filament.queue.task_queue import (
 )
 from filament.state.task_run_state import initialize_task_run_state
 
-from filament.task.types.base import FilamentBaseModel
+from filament.task.types.task_type import FilamentTaskType
 from filament.task.types.task_run import FilamentTaskRun
 from filament.queue.types.remote_task_result import FilamentRemoteTaskResult
 from filament.queue.types.remote_task_run import FilamentRemoteTaskRun
 
 
-class FilamentRemoteTaskType(FilamentBaseModel):
+class FilamentRemoteTaskType(FilamentTaskType):
     async def _dequeue_task_run(self, worker_id: str, shutdown_event: anyio.Event) -> tuple[str | None, str | None]:
         message_id, filament_task_run_json = None, None
         async with anyio.create_task_group() as task_group:
