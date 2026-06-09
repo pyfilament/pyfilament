@@ -1,7 +1,7 @@
 import json
 import logging
 
-from filament.redis_utils import r_sync
+from filament.redis.redis_utils import r_sync
 
 logger = logging.getLogger(__name__)
 

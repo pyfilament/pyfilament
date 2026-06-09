@@ -6,7 +6,7 @@ from strawberry import Info
 from sqlalchemy import select
 
 from filament.db_models import TaskRun as TaskRunModel
-from filament.redis_utils import r
+from filament.redis.redis_utils import r
 
 
 async def get_logs(

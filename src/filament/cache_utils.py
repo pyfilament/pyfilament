@@ -1,7 +1,7 @@
 import base64
 import pickle
 
-from filament.redis_utils import r
+from filament.redis.redis_utils import r
 
 CACHE_KEY_PREFIX = 'cache:'
 

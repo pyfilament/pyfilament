@@ -1,7 +1,7 @@
 from functools import partial
 
 import anyio
-from filament.redis_token_bucket import RedisTokenBucket
+from filament.redis.redis_token_bucket import RedisTokenBucket
 
 
 async def main():

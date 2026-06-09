@@ -2,7 +2,7 @@ import logging
 
 import anyio
 
-from filament.redis_utils import r
+from filament.redis.redis_utils import r
 from filament.utils import now
 
 logger = logging.getLogger(__name__)
