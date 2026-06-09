@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from filament.db_models import TaskRun, TaskState
 from filament.db_session import async_session_scope
-from filament.logic.task_run import cancel_task_run, delete_task_run
+from filament.task.task_run import cancel_task_run, delete_task_run
 from plasma import Plasma
 
 

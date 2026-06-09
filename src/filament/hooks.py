@@ -7,7 +7,7 @@ from filament.db_models import TaskRun
 from filament.db_session import async_session_scope
 from filament.filament import FilamentTaskRun
 from filament.logic.func_registry import get_registered_entries
-from filament.logic.task_run import cancel_task_run
+from filament.task.task_run import cancel_task_run
 from filament.redis.semaphore import RedisSemaphore
 from filament.task.task_state import create_task_type_state
 from filament.logic.call_stack import peek_task_run

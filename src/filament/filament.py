@@ -26,7 +26,7 @@ from filament.db_models import TaskState
 from filament.db_session import async_session_scope
 from filament.logic.func_registry import lookup_func_entry, register_func
 from filament.logic.module_type_registry import lookup_module_type, register_module_type
-from filament.logic.task_type_registry import register as register_task_type
+from filament.task.task_type_registry import register as register_task_type
 from filament.redis.logging_handler import JSONFormatter, RedisHandler
 from filament.redis.semaphore import RedisSemaphore
 from filament.redis.token_bucket import RedisTokenBucket
