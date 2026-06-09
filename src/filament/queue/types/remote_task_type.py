@@ -35,10 +35,10 @@ class FilamentRemoteTaskType(FilamentTaskType):
 
         return message_id, filament_task_run_json
 
-    async def serve(self, shutdown_event: anyio.Event):
+    async def serve(self, shutdown_event: anyio.Event | None):
         worker_id = str(uuid4())
         await setup_queue(self)
-        while not shutdown_event.is_set():
+        while shutdown_event is None or not shutdown_event.is_set():
             message_id, filament_task_run_json = await self._dequeue_task_run(worker_id, shutdown_event)
             if message_id is None or filament_task_run_json is None:
                 continue
