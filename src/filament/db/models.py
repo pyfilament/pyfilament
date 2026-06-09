@@ -1,27 +1,14 @@
 import uuid
 from datetime import datetime, timezone
-from enum import Enum
 
 from sqlalchemy import Column, ForeignKey, Index, Integer, String
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.types import TIMESTAMP
 
+from filament.task.constants import TaskState
+
 Base = declarative_base()
-
-
-class TaskState(str, Enum):
-    CREATED = 'created'
-    RUNNING = 'running'
-    CANCELLED = 'cancelled'
-    FAILURE = 'failure'
-    TIMEOUT = 'timeout'
-    SUCCESS = 'success'
-    RETRYING = 'retrying'
-    CACHED = 'cached'
-
-
-TaskState.TERMINAL = {TaskState.CANCELLED, TaskState.FAILURE, TaskState.SUCCESS, TaskState.CACHED}
 
 
 def get_uuid():

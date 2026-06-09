@@ -18,7 +18,7 @@ from filament.logic.cache_utils import (
     cache_has_key,
     cache_set,
 )
-from filament.db.models import TaskState
+from filament.task.constants import TaskState
 from filament.redis.logging_handler import JSONFormatter, RedisHandler
 from filament.redis.semaphore import RedisSemaphore
 from filament.redis.token_bucket import RedisTokenBucket

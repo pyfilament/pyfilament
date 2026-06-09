@@ -2,7 +2,8 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from filament.db.models import TaskRun, TaskState
+from filament.db.models import TaskRun
+from filament.task.constants import TaskState
 from filament.task.state.task_state import transition_state
 from filament.redis.semaphore import RedisSemaphore
 
