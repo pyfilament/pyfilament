@@ -1,4 +1,4 @@
-from filament.setup_logging import setup_logging
+from filament.api.setup_logging import setup_logging
 
 setup_logging()
 
