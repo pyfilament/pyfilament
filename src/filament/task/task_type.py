@@ -8,7 +8,7 @@ from beartype import beartype
 from pydantic import Field, PrivateAttr
 
 from filament.logic.func_registry import lookup_func_entry, register_func
-from filament.task.task_queue import (
+from filament.task.queue.task_queue import (
     dequeue_task_run,
     publish_task_result,
     setup_queue,

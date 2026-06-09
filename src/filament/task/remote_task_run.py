@@ -2,7 +2,7 @@ import anyio
 from anyio.abc import TaskGroup
 from beartype import beartype
 
-from filament.task.task_queue import (
+from filament.task.queue.task_queue import (
     enqueue_task_run,
     listen_for_task_result,
 )
