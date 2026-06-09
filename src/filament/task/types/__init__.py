@@ -1,4 +1,5 @@
 import sys
+from beartype import beartype
 from .base import FilamentBaseModel
 from .task_config import FilamentTaskConfig
 from .task_run import FilamentTaskRun
@@ -40,5 +41,11 @@ def _rebuild_models():
         model.model_rebuild()
 
 
+def _beartype_models():
+    for model in MODELS:
+        beartype(model)
+
+
 _export_models()
 _rebuild_models()
+_beartype_models()
