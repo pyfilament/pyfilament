@@ -1,7 +1,7 @@
 import anyio
 from anyio.abc import TaskGroup
 
-from filament.task.queue.task_queue import (
+from filament.queue.task_queue import (
     enqueue_task_run,
     listen_for_task_result,
 )
