@@ -9,7 +9,7 @@ from filament.task.queue.task_queue import (
 
 
 from filament.task.task_run import FilamentTaskRun
-from filament.task.task_run_state import initialize_task_run_state
+from filament.task.state.task_run_state import initialize_task_run_state
 from filament.task.task_result import FilamentTaskResult
 
 
