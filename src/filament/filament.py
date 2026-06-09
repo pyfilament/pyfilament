@@ -16,8 +16,8 @@ from beartype import beartype
 from beartype.typing import Optional, Union
 from pydantic import BaseModel, Field, PrivateAttr
 
-from filament.cache_keys import hash_cache_key
-from filament.cache_utils import (
+from filament.logic.cache_keys import hash_cache_key
+from filament.logic.cache_utils import (
     cache_get,
     cache_has_key,
     cache_set,
