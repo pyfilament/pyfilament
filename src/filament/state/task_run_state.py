@@ -6,42 +6,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from filament.db.models import TaskRun, TaskRunStateTransition, TaskType, get_utc_now
-from filament.db.session import async_session_scope
-from filament.logic.call_stack import peek_task_run
-from filament.logic.utils import get_json_dict, json_encode_safe, redact_strings
-from filament.redis.semaphore import RedisSemaphore
+from filament.logic.utils import json_encode_safe, redact_strings
 from filament.state.common import with_session
-from filament.state.task_type_state import create_task_type_state
 from filament.task.constants import TaskState
 
 if TYPE_CHECKING:
     from filament.task.types.task_run import FilamentTaskRun
 else:
     FilamentTaskRun = 'filament.task.types.task_run.FilamentTaskRun'
-
-
-@beartype
-async def initialize_task_run_state(task_run: FilamentTaskRun) -> None:
-    # lock so that we're not interrupted if initialize_task_run_state is called concurrently
-    semaphore = RedisSemaphore(
-        name=f'filament_task_run:initialize_task_run_state:{task_run.uuid}', max_leases=1, ttl=60
-    )
-    async with semaphore:
-        async with async_session_scope() as session:
-            await create_task_type_state(session, task_run.type)
-            task_run_state = await get_task_run_state(session, task_run.uuid)
-            if task_run_state is None:
-                await create_task_run_state(
-                    session=session,
-                    task_uuid=task_run.uuid,
-                    func_address=task_run.type.func_address,
-                    name=task_run.name,
-                    parameters=task_run._get_call_parameters(),
-                    is_redact=task_run.config.is_redact_input,
-                )
-                parent_task_run = peek_task_run()
-                if parent_task_run is not None:
-                    await set_parent_task_uuid(session, task_run.uuid, parent_task_run.uuid)
 
 
 @beartype
@@ -73,42 +45,20 @@ async def set_heartbeat(session: AsyncSession, task_run: FilamentTaskRun) -> Non
 
 @with_session
 @beartype
-async def get_task_run_state(session: AsyncSession, task_uuid: str) -> TaskRun | None:
-    statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-    task_run_row = (await session.execute(statement)).scalars().one_or_none()
-    return task_run_row
-
-
-@with_session
-@beartype
-async def get_task_run_dict(session: AsyncSession, task_uuid: str) -> dict | None:
-    task_run_row = await get_task_run_state(session, task_uuid)
-    if task_run_row is not None:
-        return get_json_dict(task_run_row)
-    return None
-
-
-@with_session
-@beartype
-async def create_task_run_state(
-    session: AsyncSession,
-    task_uuid: str,
-    func_address: str,
-    name: str | None = None,
-    parameters: dict | None = None,
-    is_redact: bool = False,
-) -> None:
-    statement = select(TaskType).where(TaskType.func_address == func_address)
+async def create_task_run_state(session: AsyncSession, task_run: FilamentTaskRun) -> TaskRun:
+    statement = select(TaskType).where(TaskType.func_address == task_run.type.func_address)
     task_type = (await session.execute(statement)).scalars().one_or_none()
     if task_type is None:
-        raise ValueError(f'No task type found for func_address {func_address}')
-    task_run_row = TaskRun(name=name, task_uuid=task_uuid, task_type_id=task_type.id)
-    encodable_parameters = json_encode_safe(parameters)
-    if is_redact:
-        encodable_parameters = redact_strings(encodable_parameters)
+        raise ValueError(f'No task type found for func_address {task_run.type.func_address}')
+    task_run_row = TaskRun(name=task_run.name, task_uuid=task_run.uuid, task_type_id=task_type.id)
+    parameters = task_run._get_call_parameters()
     if parameters is not None:
+        encodable_parameters = json_encode_safe(parameters)
+        if task_run.config.is_redact_input:
+            encodable_parameters = redact_strings(encodable_parameters)
         task_run_row.parameters_json = json.dumps(encodable_parameters, separators=(',', ':'), default=str)
     session.add(task_run_row)
+    return task_run_row
 
 
 @with_session
@@ -146,11 +96,3 @@ async def is_canceled(session: AsyncSession, task_uuid: str) -> bool:
     statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
     task_run_row = (await session.execute(statement)).scalars().one()
     return task_run_row.state == TaskState.CANCELLED
-
-
-@with_session
-@beartype
-async def set_parent_task_uuid(session: AsyncSession, task_uuid: str, parent_task_uuid: str) -> None:
-    statement = select(TaskRun).where(TaskRun.task_uuid == task_uuid)
-    task_run_row = (await session.execute(statement)).scalars().one()
-    task_run_row.parent_task_uuid = parent_task_uuid

@@ -23,8 +23,7 @@ else:
 
 @with_session
 @beartype
-async def create_task_type_state(session: AsyncSession, task_type: FilamentTaskType) -> None:
-    # TODO: this should be idempotent
+async def upsert_task_type_state(session: AsyncSession, task_type: FilamentTaskType) -> None:
     name = task_type.func_address
     input_json_schema = _get_parameters_spec(task_type, name)
     output_json_schema = _get_result_spec(task_type)
