@@ -1,4 +1,7 @@
 {
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
     "files.exclude": {
         "**/__pycache__/": true
     },
