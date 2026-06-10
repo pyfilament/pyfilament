@@ -6,13 +6,12 @@ from filament.queue.task_queue import (
     listen_for_task_result,
 )
 from filament.queue.types.remote_task_result import FilamentRemoteTaskResult
-from filament.state.task_run_state import initialize_task_run_state
 from filament.task.types.task_run import FilamentTaskRun
 
 
 class FilamentRemoteTaskRun(FilamentTaskRun):
     async def call(self):
-        await initialize_task_run_state(self)
+        await self._events.trigger('task_run.before_call', self)
         await enqueue_task_run(self)
         async with anyio.create_task_group() as task_group:
             if self.config.monitor:

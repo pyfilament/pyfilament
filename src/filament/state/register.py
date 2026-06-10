@@ -6,6 +6,7 @@ from filament.state.task_run_state import initialize_task_run_state, set_heartbe
 
 @beartype
 def register_task_events(events: EventManager) -> None:
+    events.on('task_run.request')(initialize_task_run_state)
     events.on('task_run.before_call')(initialize_task_run_state)
     events.on('task_run.after_call')(set_task_result)
     events.on('task_run.state_transition')(transition_state)

@@ -10,7 +10,6 @@ from filament.queue.task_queue import (
 )
 from filament.queue.types.remote_task_result import FilamentRemoteTaskResult
 from filament.queue.types.remote_task_run import FilamentRemoteTaskRun
-from filament.state.task_run_state import initialize_task_run_state
 from filament.task.types.task_run import FilamentTaskRun
 from filament.task.types.task_type import FilamentTaskType
 
@@ -89,5 +88,5 @@ class FilamentRemoteTaskType(FilamentTaskType):
             task_kwargs=task_kwargs,
             config=self.config,
         )
-        await initialize_task_run_state(task_run)
+        await self._events.trigger('task_run.request', task_run)
         return task_run
