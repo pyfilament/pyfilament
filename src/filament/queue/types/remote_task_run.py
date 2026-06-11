@@ -4,6 +4,7 @@ from anyio.abc import TaskGroup
 from filament.queue.task_queue import (
     enqueue_task_run,
     listen_for_task_result,
+    publish_task_cancelled,
 )
 from filament.queue.types.remote_task_result import FilamentRemoteTaskResult
 from filament.task.types.task_run import FilamentTaskRun
@@ -17,7 +18,11 @@ class FilamentRemoteTaskRun(FilamentTaskRun):
             if self.config.monitor:
                 task_group.start_soon(self._start_cancel_monitor, task_group)
             task_group.start_soon(self._listen_for_task_result, task_group)
-        await self._done_event.wait()
+        try:
+            await self._done_event.wait()
+        except anyio.get_cancelled_exc_class():
+            await publish_task_cancelled(self.uuid)
+            raise
         return await self.result()
 
     async def _listen_for_task_result(self, task_group: TaskGroup) -> None:

@@ -18,6 +18,10 @@ def get_result_channel_name(task_uuid):
     return f'filament:task:result:{task_uuid}'
 
 
+def get_cancelled_channel_name(task_uuid):
+    return f'filament:task:cancelled:{task_uuid}'
+
+
 def get_group_name():
     return 'group:workers'
 
@@ -132,3 +136,23 @@ async def listen_for_task_result(task_uuid):
 async def get_task_result(task_uuid):
     channel_name = get_result_channel_name(task_uuid)
     return await r.get(channel_name)
+
+
+async def publish_task_cancelled(task_uuid):
+    channel_name = get_cancelled_channel_name(task_uuid)
+    logger.debug(f'{task_uuid} publishing cancelled to {channel_name}')
+    await r.publish(channel_name, 'cancelled')
+
+
+async def listen_for_task_cancelled(task_uuid):
+    channel_name = get_cancelled_channel_name(task_uuid)
+    pubsub = r.pubsub()
+    await pubsub.subscribe(channel_name)
+    async for message in pubsub.listen():
+        if message['type'] == 'message':
+            logger.debug(f'{message["data"]} received on {channel_name}')
+            if message['data'] == 'cancelled':
+                await pubsub.unsubscribe(channel_name)
+                yield True
+            else:
+                raise ValueError(f'Unknown message type: {message["data"]}')

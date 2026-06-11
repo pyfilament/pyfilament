@@ -5,6 +5,7 @@ import anyio
 
 from filament.queue.task_queue import (
     dequeue_task_run,
+    listen_for_task_cancelled,
     publish_task_result,
     setup_queue,
 )
@@ -51,9 +52,19 @@ class FilamentRemoteTaskType(FilamentTaskType):
             except Exception as e:
                 self._logger.exception(e)
                 continue
-            await self._service_task_run(filament_task_run, message_id)
+            async with anyio.create_task_group() as task_group:
+                task_group.start_soon(self._service_task_run, filament_task_run, message_id, task_group.cancel_scope)
+                task_group.start_soon(self._listen_for_task_cancelled, filament_task_run)
 
-    async def _service_task_run(self, filament_task_run: FilamentTaskRun, message_id: str):
+    async def _listen_for_task_cancelled(self, filament_task_run: FilamentTaskRun):
+        # don't cancel the task_group. rely on canceling the task instead so we can publish the cancelled result
+        async for is_cancelled in listen_for_task_cancelled(filament_task_run.uuid):
+            if is_cancelled:
+                filament_task_run.cancel()
+
+    async def _service_task_run(
+        self, filament_task_run: FilamentTaskRun, message_id: str, cancel_scope: anyio.CancelScope
+    ):
         result, exception = None, None
         if inspect.isasyncgenfunction(self._func):
             try:
@@ -75,6 +86,7 @@ class FilamentRemoteTaskType(FilamentTaskType):
             type=self, task_uuid=filament_task_run.uuid, result=result, exception=exception
         )
         await publish_task_result(task_result, is_final=True, message_id=message_id)
+        cancel_scope.cancel()
 
     async def request(self, *task_args, **task_kwargs) -> FilamentRemoteTaskRun:
         return await self._request(task_args, task_kwargs)
