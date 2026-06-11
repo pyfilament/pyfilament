@@ -21,13 +21,14 @@ async def _run_child():
 async def test_task():
     result = None
 
-    async def _start_parent_task(cancel_scope: anyio.CancelScope):
+    async def _start_parent_task(shutdown_event: anyio.Event):
         nonlocal result
         result = await _run_parent()
-        cancel_scope.cancel()
+        shutdown_event.set()
 
     async with anyio.create_task_group() as tg:
-        tg.start_soon(_run_child.serve)
-        tg.start_soon(_start_parent_task, tg.cancel_scope)
+        shutdown_event = anyio.Event()
+        tg.start_soon(_run_child.serve, shutdown_event)
+        tg.start_soon(_start_parent_task, shutdown_event)
 
     assert result == 'parent, child'
