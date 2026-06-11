@@ -1,9 +1,16 @@
 import anyio
 
-from filament.filament import task
+from filament.logic.events import EventManager
+from filament.queue.types.remote_task_type import FilamentRemoteTaskType
 
 
-@task
+def _task(func):
+    events = EventManager()
+    task_type = FilamentRemoteTaskType(func, events=events)
+    return task_type
+
+
+@_task
 async def _run_parent():
     await anyio.sleep(0.1)
     child_task = await _run_child.request()
@@ -12,7 +19,7 @@ async def _run_parent():
     return f'parent, {result}'
 
 
-@task
+@_task
 async def _run_child():
     await anyio.sleep(0.1)
     return 'child'

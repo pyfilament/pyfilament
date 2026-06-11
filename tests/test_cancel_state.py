@@ -1,23 +1,32 @@
 import anyio
 import mock
 
-from filament.filament import task
 from filament.hooks import cancel_task_run_by_uuid
+from filament.logic.events import EventManager
+from filament.state.register import register_task_events
+from filament.task.types.task_type import FilamentTaskType
+
+
+def _task(func):
+    events = EventManager()
+    register_task_events(events)
+    task_type = FilamentTaskType(func, events=events)
+    return task_type
+
 
 _global_state = {'parent_set': False, 'child_set': False}
 
 
-@task
+@_task
 async def _run_parent():
     await anyio.sleep(0.1)
     _global_state['parent_set'] = True
-    child_task = await _run_child.request()
-    result = await child_task
+    result = await _run_child()
     await anyio.sleep(0.1)
     return f'parent, {result}'
 
 
-@task
+@_task
 async def _run_child():
     await anyio.sleep(0.1)
     _global_state['child_set'] = True
@@ -46,7 +55,6 @@ async def test_cancel():
 
     async with anyio.create_task_group() as tg:
         shutdown_event = anyio.Event()
-        tg.start_soon(_run_child.serve, shutdown_event)
         tg.start_soon(_start_parent_task, shutdown_event)
         tg.start_soon(_cancel_parent_task)
 

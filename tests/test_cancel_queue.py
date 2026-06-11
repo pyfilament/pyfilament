@@ -1,11 +1,11 @@
 import anyio
 
-from filament.filament import task
+from tests.test_queue import _task
 
 _global_state = {'parent_set': False, 'child_set': False}
 
 
-@task
+@_task
 async def _run_parent():
     await anyio.sleep(0.1)
     _global_state['parent_set'] = True
@@ -15,7 +15,7 @@ async def _run_parent():
     return f'parent, {result}'
 
 
-@task
+@_task
 async def _run_child():
     await anyio.sleep(0.1)
     _global_state['child_set'] = True

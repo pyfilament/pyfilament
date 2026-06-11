@@ -1,9 +1,14 @@
 import anyio
 
-from filament.filament import task
+from filament.task.types.task_type import FilamentTaskType
 
 
-@task
+def _task(func):
+    task_type = FilamentTaskType(func)
+    return task_type
+
+
+@_task
 async def _run_parent():
     await anyio.sleep(0.1)
     result = await _run_child()
@@ -11,7 +16,7 @@ async def _run_parent():
     return f'parent, {result}'
 
 
-@task
+@_task
 async def _run_child():
     await anyio.sleep(0.1)
     return 'child'
