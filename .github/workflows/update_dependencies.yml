@@ -1,4 +1,4 @@
-name: Update dependencies
+name: update dependencies
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,6 +16,12 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    services:
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
     - name: Check out repository
       uses: actions/checkout@v6
@@ -45,7 +51,7 @@ jobs:
     - name: Run migrations
       run: uv run alembic upgrade head
 
-    - name: Run tests with coverage
+    - name: Run pytest
       run: uv run pytest
 
     - name: Create pull request
