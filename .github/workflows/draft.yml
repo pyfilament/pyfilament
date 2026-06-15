@@ -5,15 +5,18 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
+  pull_request:
     branches:
       - main
+    types:
+      - closed
   workflow_dispatch:
 
 jobs:
 
   # https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
   update_release_draft:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     permissions:
       # write permission is required to create a github release
       contents: write
