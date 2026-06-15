@@ -1,29 +1,13 @@
-FROM ubuntu:noble AS ubuntu-base
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update
-
-RUN apt-get install -y software-properties-common
-
-FROM ubuntu-base AS ubuntu-python-base
-# https://github.com/pyenv/pyenv/wiki#suggested-build-environment
-RUN apt-get install -y build-essential libssl-dev zlib1g-dev \
-    libbz2-dev libreadline-dev libsqlite3-dev curl git \
-    libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-
-COPY .python-version ./
-RUN curl -fsSL https://pyenv.run | bash
-ENV PYENV_ROOT=/root/.pyenv
-ENV PATH=$PYENV_ROOT/bin:$PATH
-RUN pyenv install
-RUN pyenv global $(cat .python-version)
-RUN pyenv exec pip install uv
-
-FROM ubuntu-python-base AS filament
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim AS builder
 WORKDIR /app
+
+ARG APP_VERSION=0.0.0
+ENV SETUPTOOLS_SCM_PRETEND_VERSION=${APP_VERSION}
+
 COPY pyproject.toml uv.lock ./
-RUN pyenv exec uv sync --no-dev
+RUN uv sync --no-dev --no-install-project
 
 COPY . .
+RUN uv sync --no-dev --no-editable
 
-RUN pyenv exec uv run python -m compileall -q -j 0 .
+RUN uv run python -m compileall -q -j 0 .venv/
