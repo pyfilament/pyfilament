@@ -1,4 +1,4 @@
-![PyPI - Version](https://img.shields.io/pypi/v/pyfilament) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyfilament) [![pytest](https://github.com/pyfilament/pyfilament/actions/workflows/pytest.yml/badge.svg)](https://github.com/pyfilament/pyfilament/actions/workflows/pytest.yml) [![codecov](https://codecov.io/github/pyfilament/pyfilament/graph/badge.svg?token=DIUIQG3YMW)](https://codecov.io/github/pyfilament/pyfilament)
+[![PyPI - Version](https://img.shields.io/pypi/v/pyfilament)](https://pypi.org/project/pyfilament/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyfilament)](https://pypi.org/project/pyfilament/) [![pytest](https://github.com/pyfilament/pyfilament/actions/workflows/pytest.yml/badge.svg)](https://github.com/pyfilament/pyfilament/actions/workflows/pytest.yml) [![codecov](https://codecov.io/github/pyfilament/pyfilament/graph/badge.svg?token=DIUIQG3YMW)](https://codecov.io/github/pyfilament/pyfilament)
 
 Initial setup instructions
 
