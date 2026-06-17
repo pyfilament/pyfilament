@@ -4,6 +4,9 @@ image-base:
 image-ui:
 	podman build -f ui/Dockerfile -t pyfilament/pyfilament-ui:dev-latest ui
 
+image-website:
+	podman build -f website/Dockerfile -t pyfilament/pyfilament-website:dev-latest website
+
 install:
 	uv sync --all-extras
 
