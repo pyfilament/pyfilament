@@ -16,9 +16,9 @@ from filament.db.models import TaskType
 from filament.state.common import with_session
 
 if TYPE_CHECKING:
-    from filament.task.types.task_type import FilamentTaskType
+    from filament.types.task_type import FilamentTaskType
 else:
-    FilamentTaskType = 'filament.task.types.task_type.FilamentTaskType'
+    FilamentTaskType = 'filament.types.task_type.FilamentTaskType'
 
 
 @with_session

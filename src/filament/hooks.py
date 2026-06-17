@@ -7,7 +7,7 @@ from filament.db.models import TaskRun
 from filament.db.session import async_session_scope
 from filament.logic.call_stack import peek_task_run
 from filament.state.task_run_state import cancel_task_run
-from filament.task.types.task_run import FilamentTaskRun
+from filament.types.task_run import FilamentTaskRun
 
 logger = logging.getLogger(__name__)
 

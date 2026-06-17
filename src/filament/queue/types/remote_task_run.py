@@ -2,6 +2,7 @@ import asyncio
 
 import anyio
 from anyio.abc import TaskGroup
+from filament.types.task_run import FilamentTaskRun
 
 from filament.queue.task_queue import (
     enqueue_task_run,
@@ -9,7 +10,6 @@ from filament.queue.task_queue import (
     publish_task_cancelled,
 )
 from filament.queue.types.remote_task_result import FilamentRemoteTaskResult
-from filament.task.types.task_run import FilamentTaskRun
 
 
 class FilamentRemoteTaskRun(FilamentTaskRun):

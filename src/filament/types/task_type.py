@@ -2,13 +2,13 @@ import inspect
 import logging
 import types
 
+from filament.types.base import FilamentBaseModel
+from filament.types.task_config import FilamentTaskConfig
+from filament.types.task_run import FilamentTaskRun
 from pydantic import Field, PrivateAttr
 
 from filament.logic.events import EventManager
 from filament.logic.func_registry import lookup_func_entry, register_func
-from filament.task.types.base import FilamentBaseModel
-from filament.task.types.task_config import FilamentTaskConfig
-from filament.task.types.task_run import FilamentTaskRun
 
 
 class FilamentTaskType(FilamentBaseModel):

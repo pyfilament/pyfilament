@@ -1,6 +1,5 @@
 import anyio
-
-from filament.task.types.task_type import FilamentTaskType
+from filament.types.task_type import FilamentTaskType
 
 
 def _task(func):

@@ -5,9 +5,9 @@ from beartype import beartype
 from beartype.typing import Optional
 
 if TYPE_CHECKING:
-    from filament.task.types.task_run import FilamentTaskRun
+    from filament.types.task_run import FilamentTaskRun
 else:
-    FilamentTaskRun = 'filament.task.types.task_run.FilamentTaskRun'
+    FilamentTaskRun = 'filament.types.task_run.FilamentTaskRun'
 
 _call_stack = None
 

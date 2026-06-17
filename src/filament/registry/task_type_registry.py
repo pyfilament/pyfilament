@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 if TYPE_CHECKING:
-    from filament.task.types.task_type import FilamentTaskType
+    from filament.types.task_type import FilamentTaskType
 else:
-    FilamentTaskType = 'filament.task.types.task_type.FilamentTaskType'
+    FilamentTaskType = 'filament.types.task_type.FilamentTaskType'
 
 __TASK_TYPE_REGISTRY = {}
 

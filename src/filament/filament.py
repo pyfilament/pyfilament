@@ -5,8 +5,8 @@ import logging
 from filament.logic.call_stack import peek_task_run
 from filament.logic.events import EventManager
 from filament.queue.types.remote_task_type import FilamentRemoteTaskType
+from filament.registry.task_type_registry import register as register_task_type
 from filament.state.register import register_task_events
-from filament.task.registry.task_type_registry import register as register_task_type
 
 
 def get_logger():

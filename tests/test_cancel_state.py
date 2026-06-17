@@ -1,10 +1,10 @@
 import anyio
 import mock
+from filament.types.task_type import FilamentTaskType
 
 from filament.hooks import cancel_task_run_by_uuid
 from filament.logic.events import EventManager
 from filament.state.register import register_task_events
-from filament.task.types.task_type import FilamentTaskType
 
 
 def _task(func):
