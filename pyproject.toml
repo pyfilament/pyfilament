@@ -26,6 +26,8 @@ dependencies = [
     "starlette>=1.2.1",
     "werkzeug>=3.1.8",
     "redis>=8.0.0",
+    "aiosqlite>=0.22.1",
+    "asyncpg>=0.31.0",
 ]
 
 [project.urls]
@@ -33,9 +35,6 @@ Homepage = "https://pyfilament.io/"
 Repository = "https://github.com/pyfilament/pyfilament"
 "Bug Tracker" = "https://github.com/pyfilament/pyfilament/issues"
 Discord = "https://discord.gg/RgyZceR53B"
-
-[project.optional-dependencies]
-dev = ["aiosqlite>=0.22.1"]
 
 [dependency-groups]
 dev = [
