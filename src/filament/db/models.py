@@ -5,7 +5,7 @@ from filament.constants import TaskState
 from sqlalchemy import Column, ForeignKey, Index, Integer, String
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy.types import TIMESTAMP
+from sqlalchemy.types import TIMESTAMP, TypeDecorator
 
 Base = declarative_base()
 
@@ -18,16 +18,26 @@ def get_utc_now():
     return datetime.now().astimezone(timezone.utc)
 
 
+class UTCDateTime(TypeDecorator):
+    impl = TIMESTAMP(timezone=True)
+    cache_ok = True
+
+    def process_result_value(self, value, dialect):
+        if value is not None and value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value
+
+
 class TaskRun(AsyncAttrs, Base):
     __tablename__ = 'task_run'
 
     id = Column(Integer, primary_key=True)
-    created_at = Column(TIMESTAMP(timezone=True), default=get_utc_now)
+    created_at = Column(UTCDateTime, default=get_utc_now)
     task_uuid = Column(String, unique=True, nullable=False, default=get_uuid)
     name = Column(String, nullable=True)
     state = Column(String, nullable=False, default=TaskState.CREATED)
-    state_since = Column(TIMESTAMP(timezone=True), default=get_utc_now)
-    heartbeat = Column(TIMESTAMP(timezone=True), default=get_utc_now)
+    state_since = Column(UTCDateTime, default=get_utc_now)
+    heartbeat = Column(UTCDateTime, default=get_utc_now)
     run_count = Column(Integer, default=0, nullable=False)
     parent_task_uuid = Column(String, ForeignKey('task_run.task_uuid'), nullable=True, index=True)
     parameters_json = Column(String, nullable=True)
@@ -60,7 +70,7 @@ class TaskType(Base):
     __tablename__ = 'task_type'
 
     id = Column(Integer, primary_key=True)
-    created_at = Column(TIMESTAMP(timezone=True), default=get_utc_now)
+    created_at = Column(UTCDateTime, default=get_utc_now)
     name = Column(String, nullable=False)
     func_address = Column(String, unique=True, nullable=False)
     parameters_spec = Column(String, nullable=True)
@@ -76,6 +86,6 @@ class TaskRunStateTransition(Base):
     task_uuid = Column(String, ForeignKey('task_run.task_uuid'), index=True, default=get_uuid, nullable=False)
     from_state = Column(String, nullable=False)
     to_state = Column(String, nullable=False)
-    state_since = Column(TIMESTAMP(timezone=True), default=get_utc_now)
+    state_since = Column(UTCDateTime, default=get_utc_now)
 
     task_run = relationship('TaskRun', back_populates='state_transitions', uselist=False)
