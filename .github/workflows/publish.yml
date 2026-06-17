@@ -39,6 +39,8 @@ jobs:
       with:
         ref: ${{ github.event.release.tag_name }}
         fetch-depth: 0
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     - name: Log in to the Container registry
@@ -57,6 +59,7 @@ jobs:
       with:
         context: .
         push: true
+        platforms: linux/amd64,linux/arm64
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
@@ -73,6 +76,8 @@ jobs:
       with:
         ref: ${{ github.event.release.tag_name }}
         fetch-depth: 0
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     - name: Log in to the Container registry
@@ -91,6 +96,7 @@ jobs:
       with:
         context: ./ui
         push: true
+        platforms: linux/amd64,linux/arm64
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
@@ -107,6 +113,8 @@ jobs:
       with:
         ref: ${{ github.event.release.tag_name }}
         fetch-depth: 0
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     - name: Log in to the Container registry
@@ -125,6 +133,7 @@ jobs:
       with:
         context: ./website
         push: true
+        platforms: linux/amd64,linux/arm64
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
