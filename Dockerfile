@@ -7,7 +7,11 @@ ENV SETUPTOOLS_SCM_PRETEND_VERSION=${APP_VERSION}
 COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev --no-install-project --frozen
 
-COPY . .
+COPY src/ ./src/
+COPY alembic/ ./alembic/
+COPY LICENSE ./LICENSE
+COPY README.md ./README.md
+
 RUN uv sync --no-dev --no-editable --frozen
 
 RUN uv run python -m compileall -q -j 0 .venv/
