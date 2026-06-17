@@ -1,6 +1,7 @@
 import datetime
 import json
 
+from filament.registry.task_type_registry import lookup
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
@@ -11,7 +12,6 @@ from filament.api.types.task import TaskRun, TaskType
 from filament.db.models import TaskRun as TaskRunModel
 from filament.db.models import TaskType as TaskTypeModel
 from filament.state.task_run_state import cancel_task_run as logic_cancel_task_run
-from filament.task.registry.task_type_registry import lookup
 
 DEFAULT_MAX_DAYS = 3
 

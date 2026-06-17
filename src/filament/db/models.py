@@ -1,12 +1,11 @@
 import uuid
 from datetime import datetime, timezone
 
+from filament.constants import TaskState
 from sqlalchemy import Column, ForeignKey, Index, Integer, String
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.types import TIMESTAMP
-
-from filament.task.constants import TaskState
 
 Base = declarative_base()
 

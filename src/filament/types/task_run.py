@@ -10,6 +10,9 @@ from uuid import uuid4
 
 import anyio
 from anyio.abc import TaskGroup
+from filament.constants import DEFAULT_HEARTBEAT_INTERVAL, TaskState
+from filament.types.base import FilamentBaseModel
+from filament.types.task_config import FilamentTaskConfig
 from pydantic import Field, PrivateAttr
 
 from filament.logic.cache_utils import (
@@ -23,12 +26,9 @@ from filament.logic.utils import get_function_type
 from filament.redis.logging_handler import JSONFormatter, RedisHandler
 from filament.redis.semaphore import RedisSemaphore
 from filament.redis.token_bucket import RedisTokenBucket
-from filament.task.constants import DEFAULT_HEARTBEAT_INTERVAL, TaskState
-from filament.task.types.base import FilamentBaseModel
-from filament.task.types.task_config import FilamentTaskConfig
 
 if TYPE_CHECKING:
-    from filament.task.types.task_type import FilamentTaskType
+    from filament.types.task_type import FilamentTaskType
 
 
 class FilamentTaskRun(FilamentBaseModel):

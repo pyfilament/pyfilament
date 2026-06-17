@@ -1,4 +1,4 @@
-from filament.task.types.task_type import FilamentTaskType
+from filament.types.task_type import FilamentTaskType
 
 _run_count = 0
 

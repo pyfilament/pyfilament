@@ -2,18 +2,18 @@ import json
 from typing import TYPE_CHECKING
 
 from beartype import beartype
+from filament.constants import TaskState
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from filament.db.models import TaskRun, TaskRunStateTransition, TaskType, get_utc_now
 from filament.logic.utils import get_json_encodable, redact_strings
 from filament.state.common import with_session
-from filament.task.constants import TaskState
 
 if TYPE_CHECKING:
-    from filament.task.types.task_run import FilamentTaskRun
+    from filament.types.task_run import FilamentTaskRun
 else:
-    FilamentTaskRun = 'filament.task.types.task_run.FilamentTaskRun'
+    FilamentTaskRun = 'filament.types.task_run.FilamentTaskRun'
 
 
 @beartype

@@ -2,6 +2,8 @@ import inspect
 from uuid import uuid4
 
 import anyio
+from filament.types.task_run import FilamentTaskRun
+from filament.types.task_type import FilamentTaskType
 
 from filament.queue.task_queue import (
     dequeue_task_run,
@@ -11,8 +13,6 @@ from filament.queue.task_queue import (
 )
 from filament.queue.types.remote_task_result import FilamentRemoteTaskResult
 from filament.queue.types.remote_task_run import FilamentRemoteTaskRun
-from filament.task.types.task_run import FilamentTaskRun
-from filament.task.types.task_type import FilamentTaskType
 
 
 class FilamentRemoteTaskType(FilamentTaskType):
