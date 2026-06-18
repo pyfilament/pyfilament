@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pyfilament-api
+spec:
+  ports:
+    - port: 5006
+      targetPort: 5006

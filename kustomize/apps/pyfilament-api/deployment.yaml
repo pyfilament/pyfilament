@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pyfilament-api
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: pyfilament-api
+          image: ghcr.io/pyfilament/pyfilament:latest
+          env:
+            - name: FILAMENT_REDIS_HOST
+              value: pyfilament-redis
+            - name: FILAMENT_DB_URI
+              value: postgresql+asyncpg://postgres:postgres@pyfilament-psql:5432/pyfilament
+          command: ["uv", "run", "uvicorn", "filament.api.main:app", "--host", "0.0.0.0", "--port", "5006", "--reload", "--reload-dir", "src/"]
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5006
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5006
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+            successThreshold: 1

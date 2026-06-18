@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pyfilament-ui
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: pyfilament-ui
+          image: ghcr.io/pyfilament/pyfilament-ui:latest
+          command: ["npm", "run", "preview"]
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "nc -z 127.0.0.1 3001"
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "nc -z 127.0.0.1 3001"
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+            successThreshold: 1
