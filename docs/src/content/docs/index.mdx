@@ -5,6 +5,7 @@ description: "Pyfilament adds retries, timeouts, caching, rate limiting, and dis
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Steps } from '@astrojs/starlight/components';
 
 Welcome to Pyfilament — a lightweight Python task framework that turns any async function into a managed, durable task with a single `@task` decorator. Add retries, timeouts, caching, rate limiting, concurrency controls, and distributed workers to your async code without restructuring it.
 
@@ -26,34 +27,16 @@ Welcome to Pyfilament — a lightweight Python task framework that turns any asy
 ## Get up and running in three steps
 
 <Steps>
-  <Step title="Install Pyfilament">
+  1. Install Pyfilament
     Add `pyfilament` to your project using `uv` or `pip`.
 
-    ```bash
-    uv add pyfilament
-    ```
-  </Step>
-  <Step title="Decorate your function with @task">
+  2. Decorate your function with @task
     Import `task` from `filament` and apply it to any async function.
 
-    ```python
-    from filament import task
-
-    @task(tries=3, timeout=10.0)
-    async def fetch_data(url: str) -> dict:
-        ...
-    ```
-  </Step>
-  <Step title="Run it">
+  3. Run it
     Call the function normally. Pyfilament manages execution, retries, and state tracking automatically.
 
-    ```python
-    from asyncio import run
-
-    run(fetch_data("https://api.example.com/data"))
-    ```
-  </Step>
-</Steps>
+  </Steps>
 
 ## Feature highlights
 
