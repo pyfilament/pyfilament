@@ -1,0 +1,60 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: pyfilament-demo
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingress-public
+  servers:
+  - hosts:
+    - demo.pyfilament.io
+    port:
+      number: 80
+      name: http
+      protocol: HTTP
+  - hosts:
+    - demo.pyfilament.io
+    port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: pyfilament-wildcard-tls
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: pyfilament-demo
+  namespace: pyfilament
+spec:
+  hosts:
+  - demo.pyfilament.io
+  gateways:
+  - istio-system/pyfilament-demo
+  http:
+  - name: redirect-http-to-https
+    match:
+    - port: 80
+    redirect:
+      scheme: https
+      port: 443
+  - name: api
+    match:
+    - uri:
+        prefix: /graphql
+    route:
+    - destination:
+        port:
+          number: 5006
+        host: pyfilament-api
+  - name: frontend
+    match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        port:
+          number: 3001
+        host: pyfilament-ui

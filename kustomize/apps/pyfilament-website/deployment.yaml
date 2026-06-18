@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pyfilament-website
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: pyfilament-website
+          image: ghcr.io/pyfilament/pyfilament-website:latest
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "nc -z 127.0.0.1 8000"
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "nc -z 127.0.0.1 8000"
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+            successThreshold: 1

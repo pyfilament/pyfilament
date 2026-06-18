@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pyfilament-ui
+spec:
+  ports:
+    - port: 3001
+      targetPort: 3001

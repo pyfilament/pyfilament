@@ -1,0 +1,64 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: pyfilament-website
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingress-public
+  servers:
+  - hosts:
+    - pyfilament.io
+    port:
+      number: 80
+      name: http
+      protocol: HTTP
+  - hosts:
+    - pyfilament.io
+    port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: pyfilament-website-tls
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: pyfilament-website
+  namespace: pyfilament
+spec:
+  hosts:
+  - pyfilament.io
+  gateways:
+  - istio-system/pyfilament-website
+  http:
+  - name: redirect-http-to-https
+    match:
+    - port: 80
+    redirect:
+      scheme: https
+      port: 443
+  - name: website
+    match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: pyfilament-website
+        port:
+          number: 8000
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pyfilament-website-tls
+  namespace: istio-system
+spec:
+  secretName: pyfilament-website-tls
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+  dnsNames:
+    - "pyfilament.io"

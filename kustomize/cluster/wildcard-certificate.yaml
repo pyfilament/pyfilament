@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pyfilament-wildcard-tls
+  namespace: istio-system
+spec:
+  secretName: pyfilament-wildcard-tls
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+  dnsNames:
+    - "*.pyfilament.io"
