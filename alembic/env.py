@@ -26,7 +26,9 @@ target_metadata = Base.metadata
 
 
 # Set the SQLAlchemy URL in the config object
-# config.set_main_option('sqlalchemy.url', FILAMENT_DB_URI)
+import os
+
+config.set_main_option('sqlalchemy.url', os.getenv('FILAMENT_DB_URI', 'sqlite:///filament.sqlite'))
 
 
 def run_migrations_offline() -> None:
