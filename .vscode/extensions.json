@@ -8,6 +8,7 @@
         "bradlc.vscode-tailwindcss",
         "ms-python.mypy-type-checker",
         "streetsidesoftware.code-spell-checker",
-        "anysphere.cursorpyright"
+        "anysphere.cursorpyright",
+        "astro-build.astro-vscode"
     ]
 }

@@ -24,6 +24,14 @@
             "runtimeArgs": ["run", "dev"],
             "console": "integratedTerminal",
             "consoleTitle": "ui"
-        }
+        },
+        {
+            "command": "./node_modules/.bin/astro dev",
+            "cwd": "${workspaceFolder}/docs",
+            "name": "docs",
+            "request": "launch",
+            "type": "node-terminal"
+          }
+      
     ]
 }
