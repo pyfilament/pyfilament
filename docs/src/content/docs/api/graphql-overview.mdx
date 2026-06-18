@@ -1,0 +1,112 @@
+---
+title: "graphql-overview"
+---
+
+Pyfilament's server exposes a GraphQL API at `/graphql`. Use it to query task types, task runs, state transitions, and logs, and to trigger mutations that cancel or start tasks. The API powers the Pyfilament dashboard and is available for your own integrations and monitoring tooling.
+
+---
+
+## Endpoint
+
+```text
+POST /graphql
+```
+
+Send GraphQL queries and mutations as JSON to this endpoint. You can also open it in a browser to access the interactive GraphQL Playground.
+
+---
+
+## Core types
+
+### TaskType
+
+Represents a registered `@task`-decorated function.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `ID` | Database ID of the task type. |
+| `funcAddress` | `String` | Module path and function name, e.g. `myapp.tasks:process_order`. |
+| `name` | `String` | Display name (defaults to `funcAddress`). |
+| `parametersSpec` | `String` | JSON schema of the task's input parameters. |
+| `resultSpec` | `String` | JSON schema of the task's return value. |
+| `taskRuns` | `[TaskRun]` | Most recent task runs for this type (up to 99, newest first). |
+| `latestTaskRun` | `TaskRun` | The single most recently updated task run. |
+
+### TaskRun
+
+Represents a single execution of a task type.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `Int` | Database ID. |
+| `taskUuid` | `String` | Unique UUID for this run. |
+| `name` | `String` | Human-readable name, e.g. `process_order(abc123)`. |
+| `createdAt` | `DateTime` | When the run was created. |
+| `state` | `String` | Current [TaskState](/api/task-states) value. |
+| `stateSince` | `DateTime` | When the current state was entered. |
+| `heartbeat` | `DateTime` | Timestamp of the last heartbeat event. |
+| `runCount` | `Int` | Number of attempts made so far. |
+| `parentTaskUuid` | `String` | UUID of the parent task run, if this is a subtask. |
+| `parametersJson` | `String` | JSON-encoded input parameters (null if `is_redact_input=True`). |
+| `resultJson` | `String` | JSON-encoded result (null if `is_redact_output=True`). |
+| `taskType` | `TaskType` | The task type this run belongs to. |
+| `stateTransitions` | `[TaskRunStateTransition]` | Full history of state changes. |
+| `childTasks` | `[TaskRun]` | Subtasks spawned by this run. |
+| `logs(withChildren, maxDepth, maxNumChildren)` | `[TaskRunLog]` | Structured log entries emitted during execution. Accepts optional arguments: `withChildren: Boolean = true` (include logs from child tasks), `maxDepth: Int = 3` (how many levels of children to traverse), `maxNumChildren: Int = 100` (max children per level). |
+| `taskRunsStack` | `[TaskRun]` | Ancestor chain from the root task down to this run (inclusive). |
+
+### TaskRunStateTransition
+
+Records a single state change for a task run.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `Int` | Database ID. |
+| `taskUuid` | `String` | UUID of the associated task run. |
+| `fromState` | `String` | Previous state. |
+| `toState` | `String` | New state. |
+| `stateSince` | `DateTime` | When the transition occurred. |
+| `taskRun` | `TaskRun` | The task run this transition belongs to. |
+
+### TaskRunLog
+
+A single structured log entry emitted by `get_logger()` during task execution.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `timestamp` | `Float` | Unix timestamp of the log entry. |
+| `level` | `String` | Log level, e.g. `INFO`, `WARNING`, `ERROR`. |
+| `name` | `String` | Logger name (`func_address:task_uuid`). |
+| `message` | `String` | Log message body. |
+
+---
+
+## Authentication
+
+Pyfilament does not require authentication by default. Secure the `/graphql` endpoint with your own network policies, reverse proxy, or authentication middleware.
+
+---
+
+## Example query
+
+```graphql
+query {
+  getTaskTypes(days: 7) {
+    id
+    name
+    funcAddress
+    latestTaskRun {
+      taskUuid
+      state
+      stateSince
+    }
+  }
+}
+```
+
+---
+
+## Next steps
+
+- [GraphQL Queries](/api/graphql-queries) — full reference for all seven query fields
+- [GraphQL Mutations](/api/graphql-mutations) — reference for `cancelTaskRun` and `runTask`

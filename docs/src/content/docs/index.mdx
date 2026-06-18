@@ -1,0 +1,71 @@
+---
+title: "Pyfilament: Resilient Async Task Framework for Python"
+sidebarTitle: "Home"
+description: "Pyfilament adds retries, timeouts, caching, rate limiting, and distributed workers to any async Python function with a single decorator."
+---
+
+Welcome to Pyfilament — a lightweight Python task framework that turns any async function into a managed, durable task with a single `@task` decorator. Add retries, timeouts, caching, rate limiting, concurrency controls, and distributed workers to your async code without restructuring it.
+
+<CardGroup cols={2}>
+  <Card title="Introduction" icon="book-open" href="/introduction">
+    Learn what Pyfilament is, how it works, and when to use it.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install Pyfilament and run your first task in under 5 minutes.
+  </Card>
+  <Card title="Core Concepts" icon="layer-group" href="/concepts/tasks">
+    Understand tasks, task runs, workers, queues, and state lifecycle.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/task-decorator">
+    Explore every parameter of the `@task` decorator and the full public API.
+  </Card>
+</CardGroup>
+
+## Get up and running in three steps
+
+<Steps>
+  <Step title="Install Pyfilament">
+    Add `pyfilament` to your project using `uv` or `pip`.
+
+    ```bash
+    uv add pyfilament
+    ```
+  </Step>
+  <Step title="Decorate your function with @task">
+    Import `task` from `filament` and apply it to any async function.
+
+    ```python
+    from filament import task
+
+    @task(tries=3, timeout=10.0)
+    async def fetch_data(url: str) -> dict:
+        ...
+    ```
+  </Step>
+  <Step title="Run it">
+    Call the function normally. Pyfilament manages execution, retries, and state tracking automatically.
+
+    ```python
+    from asyncio import run
+
+    run(fetch_data("https://api.example.com/data"))
+    ```
+  </Step>
+</Steps>
+
+## Feature highlights
+
+<CardGroup cols={2}>
+  <Card title="Retries & Backoff" icon="rotate">
+    Automatically retry failing tasks with configurable attempt counts, fixed delays, and exponential backoff. Control which exception types trigger a retry.
+  </Card>
+  <Card title="Timeouts & Caching" icon="clock">
+    Cancel tasks that exceed a time limit and cache results by input arguments — with optional TTL — so repeated calls skip redundant work.
+  </Card>
+  <Card title="Rate Limiting" icon="gauge">
+    Enforce per-task rate limits (calls per second) and maximum concurrency caps to protect downstream services and shared resources.
+  </Card>
+  <Card title="Distributed Workers" icon="server">
+    Dispatch tasks to remote workers via Redis-backed queues. Scale horizontally and monitor every run through the built-in observability UI.
+  </Card>
+</CardGroup>

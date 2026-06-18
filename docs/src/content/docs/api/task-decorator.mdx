@@ -1,0 +1,118 @@
+---
+title: "task-decorator"
+---
+
+The `@task` decorator is Pyfilament's primary API. It wraps any async Python function and returns a managed task type with retries, timeouts, caching, and distributed execution built in.
+
+## Import
+
+```python
+from filament import task
+```
+
+## Basic usage
+
+Apply `@task` directly to any `async def` function without parentheses:
+
+```python
+@task
+async def my_function(x: int) -> str:
+    return str(x)
+```
+
+Pyfilament detects the bare decorator form and wraps the function immediately — no call to `@task()` is required when you have no configuration to pass.
+
+## With configuration
+
+Pass configuration kwargs to `@task(...)` to control retry behaviour, caching, rate limiting, and more:
+
+```python
+@task(
+    tries=3,
+    timeout=30.0,
+    delay=1.0,
+    backoff_base=2,
+    cache=True,
+    cache_ttl=3600,
+    rate_limit=10.0,
+    max_concurrent=5,
+)
+async def my_function(x: int) -> str:
+    return str(x)
+```
+
+See [FilamentTaskConfig](/api/task-config) for all available options.
+
+## Call patterns
+
+`@task` supports three execution patterns:
+
+```python
+# 1. Local execution — await directly to run in the current process
+result = await my_function(42)
+
+# 2. Remote execution — enqueue for a worker process, then await the result
+task_run = await my_function.request(42)
+result = await task_run
+
+# 3. Streaming — iterate over results from an async generator task
+@task
+async def stream_numbers(n: int):
+    for i in range(n):
+        yield i
+
+async for num in stream_numbers(5):
+    print(num)
+```
+
+## Methods
+
+Decorating a function with `@task` produces a task type object with the following methods:
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `__call__(*args, **kwargs)` | a task run | Creates a task run. Await it to execute locally, or iterate it for streaming tasks. |
+| `async serve(shutdown_event=None)` | `None` | Runs the task type as a worker, processing remote requests until `shutdown_event` is set. |
+| `async request(*args, **kwargs)` | a remote task run | Enqueues the task for a remote worker and returns a handle you can await for the result. |
+
+### serve()
+
+**Signature:** `async serve(self, shutdown_event: anyio.Event | None = None) -> None`
+
+Start a worker loop that dequeues and executes remote task requests. Pass an `anyio.Event` as `shutdown_event` to stop the worker gracefully:
+
+```python
+import anyio
+from filament import task
+
+@task
+async def my_function(x: int) -> str:
+    return str(x)
+
+async def main():
+    shutdown = anyio.Event()
+    await my_function.serve(shutdown_event=shutdown)
+
+anyio.run(main)
+```
+
+### request()
+
+**Signature:** `async request(self, *task_args, **task_kwargs)` → a remote task run
+
+Enqueues the task for a remote worker. Returns a remote task run handle that you can `await` to retrieve the result once the worker completes it:
+
+```python
+task_run = await my_function.request(42)
+result = await task_run
+```
+
+## Config override at call time
+
+Override any [`FilamentTaskConfig`](/api/task-config) field per call by passing it as a keyword argument. Pyfilament automatically separates config kwargs from your function's own parameters — if a config field name collides with one of your function's parameters, the function parameter takes priority.
+
+```python
+result = await my_function(42, tries=1, timeout=5.0)
+```
+
+This is useful for one-off calls where you want stricter timeouts or no retries without changing the task definition.

@@ -1,0 +1,90 @@
+---
+title: "logging"
+---
+
+Pyfilament captures structured JSON logs for each task run, making them viewable in the dashboard and queryable through the GraphQL API. Call `get_logger()` inside any task to emit logs that are automatically tagged with the task's UUID and kept separate from concurrent runs of the same task type.
+
+## Using get\_logger()
+
+Call `get_logger()` at any point inside a `@task` function. It returns a standard Python `Logger` pre-configured to write structured JSON entries scoped to the current task run:
+
+```python
+from filament import task, get_logger
+
+@task
+async def process_order(order_id: str) -> dict:
+    logger = get_logger()
+    logger.info(f"Starting order {order_id}")
+    # ... processing ...
+    logger.info(f"Order {order_id} complete")
+    return {"status": "done"}
+```
+
+Log entries from concurrent runs of the same task type are stored separately and never mixed together.
+
+## Log format
+
+Each log entry is a JSON object with four fields:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `timestamp` | `float` | Unix timestamp (seconds since epoch) |
+| `level` | `str` | Log level name: `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL` |
+| `name` | `str` | Logger name identifying the task type and run |
+| `message` | `str` | The formatted log message |
+
+A sample log entry:
+
+```json
+{
+  "timestamp": 1735000000.123,
+  "level": "INFO",
+  "name": "myapp.tasks:process_order:abc12345",
+  "message": "Starting order ord-999"
+}
+```
+
+## Viewing logs in the dashboard
+
+On the **Task Run** page, the **Logs** panel shows all log entries for the selected run. The dashboard also collects logs from subtasks and sorts all entries chronologically by timestamp, giving you a unified event stream across the entire execution tree. The subtask depth and maximum number of child tasks included in the log view are configurable directly in the dashboard.
+
+## Querying logs via GraphQL
+
+Logs are also available through the GraphQL API via the `logs` field on `TaskRun`:
+
+```graphql
+query {
+  getTaskRun(taskUuid: "your-task-uuid") {
+    taskUuid
+    state
+    logs {
+      timestamp
+      level
+      name
+      message
+    }
+  }
+}
+```
+
+## Log levels
+
+Use the standard Python log level methods on the logger returned by `get_logger()`:
+
+```python
+logger.debug("Detailed diagnostic info")
+logger.info("Normal operational message")
+logger.warning("Something unexpected but recoverable")
+logger.error("An error occurred")
+logger.critical("A severe error that may abort the task")
+```
+
+Set the log level on the logger object or via standard Python logging configuration to control which levels are captured.
+
+## get\_logger() outside a task
+
+If you call `get_logger()` from outside a task execution context — for example, in a utility function that is not itself decorated with `@task` — it returns a standard Python logger named after the calling module and function. Entries from this logger are not associated with any task run and do not appear in the dashboard.
+
+<Note>
+  Logs are stored with a retention period of 14 days and are retrieved by both the dashboard and the GraphQL API's `logs` field on `TaskRun`. No separate log aggregation backend is required.
+</Note>

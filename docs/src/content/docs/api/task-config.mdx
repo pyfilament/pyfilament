@@ -1,0 +1,90 @@
+---
+title: "task-config"
+---
+
+`FilamentTaskConfig` holds all configuration for a Pyfilament task. Pass any of these fields as kwargs to `@task(...)` to set task-level defaults, or supply them per call to override on a single invocation.
+
+## Parameters
+
+<ParamField body="timeout" default="None" type="float | None">
+  Maximum seconds the task is allowed to run. If the task exceeds this duration, Pyfilament transitions it to `timeout` state and raises a `TimeoutError`. Set to `None` to disable.
+</ParamField>
+
+<ParamField body="start_immediately" default="false" type="bool">
+  When `True`, the task run starts executing as soon as the task run object is created, without requiring an explicit `await` or `.start()` call. Use with care in concurrent contexts.
+</ParamField>
+
+<ParamField body="propagate" default="true" type="bool">
+  Controls exception behaviour when awaiting a task run.
+
+  - `True` (default): if the task fails, the exception is re-raised at the `await` site.
+  - `False`: if the task fails, the exception object is returned as the result instead of being raised.
+</ParamField>
+
+<ParamField body="tries" default="1" type="int">
+  Total number of attempts to make, including the first. Set to a value greater than `1` to enable retries. Combine with `delay` and `backoff_base` to control retry timing.
+</ParamField>
+
+<ParamField body="delay" default="0" type="float">
+  Base delay in seconds between retry attempts. When `tries > 1` and an attempt fails, Pyfilament waits `delay * backoff_base^attempt` seconds (with a small random jitter) before the next try.
+</ParamField>
+
+<ParamField body="backoff_base" default="2" type="float">
+  Exponential backoff multiplier applied to `delay` on each successive retry. A value of `2` doubles the wait time per attempt.
+</ParamField>
+
+<ParamField body="retry_exceptions" default="[Exception]" type="list[type[Exception]]">
+  Exception types that trigger a retry. By default, any `Exception` causes a retry (up to `tries`). Pass a narrower list to retry only on specific errors, for example `[ConnectionError, TimeoutError]`.
+</ParamField>
+
+<ParamField body="no_retry_exceptions" default="[]" type="list[type[Exception]]">
+  Exception types that are **never** retried, even if they appear in `retry_exceptions`. Takes precedence. Useful for marking business-logic errors as non-retryable.
+</ParamField>
+
+<ParamField body="cache" default="false" type="bool">
+  Enable result caching. When `True`, Pyfilament checks the cache before running the task and stores the result after a successful run. The cache key is derived from the function and its parameters by default.
+</ParamField>
+
+<ParamField body="cache_key" default="hash of func + params" type="callable">
+  A callable that receives `(func, parameters_dict)` and returns a cache key string. Override this to implement custom cache key logic.
+</ParamField>
+
+<ParamField body="cache_ttl" default="None" type="int | None">
+  Time-to-live for cached results, in seconds. When `None`, cached results never expire. Only applies when `cache=True`.
+</ParamField>
+
+<ParamField body="refresh_cache" default="false" type="bool">
+  When `True`, bypass any existing cached result and re-run the task, then overwrite the cache with the new result. Only applies when `cache=True`.
+</ParamField>
+
+<ParamField body="heartbeat" default="true" type="bool">
+  When `True`, Pyfilament emits a heartbeat event every `heartbeat_interval` seconds while the task is running. The cleanup process uses heartbeats to detect dead or stalled tasks. Disable only if you have very long-running tasks with predictable durations.
+</ParamField>
+
+<ParamField body="heartbeat_interval" default="60" type="float | None">
+  Interval in seconds between heartbeat events. Only applies when `heartbeat=True`. Defaults to the `DEFAULT_HEARTBEAT_INTERVAL` constant (60 seconds).
+</ParamField>
+
+<ParamField body="monitor" default="true" type="bool">
+  When `True`, Pyfilament polls for cancellation signals every `monitor_interval` seconds. Disable only if you do not need external cancellation support.
+</ParamField>
+
+<ParamField body="monitor_interval" default="10" type="float | None">
+  Interval in seconds between cancellation checks. Only applies when `monitor=True`. Defaults to the `DEFAULT_MONITOR_INTERVAL` constant (10 seconds).
+</ParamField>
+
+<ParamField body="max_concurrent" default="None" type="int | None">
+  Maximum number of simultaneous executions across all workers for this task type. Enforced via a distributed Redis semaphore. Set to `None` to allow unlimited concurrency.
+</ParamField>
+
+<ParamField body="rate_limit" default="None" type="float | None">
+  Maximum task starts per second across all workers, enforced via a Redis token bucket. For example, `rate_limit=10.0` allows up to 10 executions per second. Set to `None` to disable.
+</ParamField>
+
+<ParamField body="is_redact_input" default="false" type="bool">
+  When `True`, the task's input parameters are **not** stored in the database. Use this for tasks that receive secrets, PII, or other sensitive data.
+</ParamField>
+
+<ParamField body="is_redact_output" default="false" type="bool">
+  When `True`, the task's result is **not** stored in the database. Use this for tasks that return sensitive data you do not want persisted.
+</ParamField>

@@ -1,0 +1,99 @@
+---
+title: "workers"
+---
+
+A Pyfilament worker is a long-running process that dequeues and executes tasks from Redis. Run one or many workers to process tasks in parallel — each worker instance is independent and self-registers automatically.
+
+## Start a worker
+
+Call `.serve()` on any `@task` function to start a blocking worker loop. The worker connects to Redis, then continuously dequeues and executes runs for that task type:
+
+```python worker.py
+import asyncio
+from filament import task
+
+@task
+async def process_order(order_id: str) -> dict:
+    # process the order
+    return {"order_id": order_id, "status": "processed"}
+
+if __name__ == "__main__":
+    asyncio.run(process_order.serve())
+```
+
+Run the worker:
+
+```bash
+python worker.py
+```
+
+The worker blocks until the process is killed or a shutdown event fires.
+
+## Graceful shutdown
+
+Pass a `shutdown_event` to `.serve()` so your worker drains cleanly on SIGTERM or SIGINT. The worker finishes the task it is currently executing, then stops accepting new work:
+
+```python worker.py
+import asyncio
+import signal
+import anyio
+from filament import task
+
+@task
+async def process_order(order_id: str) -> dict:
+    return {"order_id": order_id, "status": "processed"}
+
+async def main():
+    shutdown = anyio.Event()
+
+    def _handle_signal():
+        shutdown.set()
+
+    loop = asyncio.get_event_loop()
+    loop.add_signal_handler(signal.SIGTERM, _handle_signal)
+    loop.add_signal_handler(signal.SIGINT, _handle_signal)
+
+    await process_order.serve(shutdown_event=shutdown)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+When `shutdown_event` is set, the worker stops blocking for new messages and returns after the current task run completes.
+
+## Horizontal scaling
+
+Scale throughput by running multiple worker processes — on the same machine or across many hosts:
+
+- Each worker instance is **independent**. Start another process and it joins the pool automatically with no configuration changes required.
+- Redis distributes messages so that **each task goes to exactly one worker**. Two workers serving the same task type will never execute the same run.
+- Workers **self-register** — no central coordinator is needed.
+
+## Multiple task types on one worker
+
+Use `anyio` task groups to serve several task types from a single process. Each `.serve()` call runs concurrently:
+
+```python
+import asyncio
+import anyio
+from filament import task
+
+@task
+async def job_a(x: int) -> int: ...
+
+@task
+async def job_b(y: str) -> str: ...
+
+async def main():
+    async with anyio.create_task_group() as tg:
+        tg.start_soon(job_a.serve)
+        tg.start_soon(job_b.serve)
+
+asyncio.run(main())
+```
+
+This is equivalent to running two separate worker processes but in a single Python process, which can simplify deployment when your task types are lightweight.
+
+<Note>
+  Ensure your worker process imports the same `@task` functions that will receive queue messages. Workers look up tasks by function address, so the import path must match the one used when the task type was registered.
+</Note>

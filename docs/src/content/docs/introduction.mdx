@@ -1,0 +1,71 @@
+---
+title: "introduction"
+description: "Pyfilament wraps async functions with durable execution: retries, timeouts, caching, rate limits, distributed workers, and a live observability UI."
+---
+
+Pyfilament is a lightweight Python task framework designed for engineers who want durable, observable task execution without adopting a heavy orchestration platform. Wrap any async function with the `@task` decorator and immediately gain retries, timeouts, caching, rate limiting, concurrency controls, and distributed worker dispatch — all configured directly on the decorator, not scattered across infrastructure code.
+
+## What Pyfilament does
+
+Pyfilament centres on one idea: your business logic should not change to become resilient. Instead of rewriting functions to handle retries or timeouts manually, you apply `@task` and declare your requirements as decorator arguments.
+
+When you call a decorated function, Pyfilament creates a **task run** — a tracked execution unit with a unique ID, a full state timeline (`created → running → success / failure / retrying / timeout / cached / cancelled`), captured inputs and outputs, and structured logs. Task runs execute locally by default, or you can push them onto a Redis-backed queue for remote workers to pick up. The built-in FastAPI \+ React observability server gives you a live view of every run across your fleet.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Retries & Backoff" icon="rotate">
+    Retry failing tasks up to `tries` times. Set a fixed `delay` between attempts and a `backoff_base` multiplier for exponential backoff. Scope retries to specific exception types with `retry_exceptions` and `no_retry_exceptions`.
+  </Card>
+
+  <Card title="Timeouts" icon="clock">
+    Cancel any task run that exceeds `timeout` seconds. The run transitions to the `timeout` terminal state so you can distinguish it from other failures.
+  </Card>
+
+  <Card title="Result Caching" icon="database">
+    Enable `cache=True` to store task results in Redis keyed by a hash of the input arguments. Set `cache_ttl` (seconds) to expire stale results, or pass `refresh_cache=True` at call time to bypass the cache once.
+  </Card>
+
+  <Card title="Rate Limiting" icon="gauge">
+    Set `rate_limit` (calls per second) to throttle how often a task can be dispatched — useful when calling APIs with strict quotas.
+  </Card>
+
+  <Card title="Concurrency Control" icon="sliders">
+    Set `max_concurrent` to cap how many instances of a task run at the same time, preventing resource exhaustion across local and remote workers.
+  </Card>
+
+  <Card title="Distributed Workers" icon="server">
+    Dispatch task runs to Redis-backed queues and process them with remote workers. Workers dequeue, execute, and report state back to the same tracking store.
+  </Card>
+
+  <Card title="Subtask Composition" icon="sitemap">
+    Call `@task`-decorated functions from inside other tasks. Pyfilament tracks the parent–child relationship, giving you a full call-tree view in the observability UI.
+  </Card>
+
+  <Card title="Observability UI" icon="chart-line">
+    The built-in FastAPI server and React dashboard surface live task state, state timelines, structured logs, and captured arguments for every run — no third-party tool required.
+  </Card>
+</CardGroup>
+
+## How it works
+
+1. **Decorate** — Apply `@task` (or `@task(...)` with configuration arguments) to any `async def` function. Pyfilament registers the function as a task type at import time.
+2. **Configure** — Express execution requirements as decorator arguments: `tries`, `timeout`, `delay`, `backoff_base`, `cache`, `rate_limit`, `max_concurrent`, and more. All configuration lives alongside the function definition.
+3. **Run** — Call the function normally with `await` or `asyncio.run()`. Pyfilament creates a task run, enforces your configuration, and records state transitions, logs, and results. To run remotely, start a worker process pointing at the same Redis instance and the task is dispatched automatically.
+
+## Requirements
+
+- **Python 3.14 or higher** — Pyfilament targets CPython 3.14\+.
+- **Redis 7\+** — Required for distributed workers, result caching, rate limiting, and the observability dashboard. Local-only tasks without those features work without Redis.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install Pyfilament and run your first task in under 5 minutes.
+  </Card>
+
+  <Card title="Core Concepts" icon="layer-group" href="/concepts/tasks">
+    Go deeper on task runs, state lifecycle, workers, and queues.
+  </Card>
+</CardGroup>

@@ -1,0 +1,69 @@
+---
+title: "timeouts"
+---
+
+Pyfilament lets you cap how long a task can run by setting a `timeout`. If a task exceeds its timeout, it transitions to the `timeout` state and raises a `TimeoutError`.
+
+## Setting a timeout
+
+Pass `timeout` (in seconds) to the `@task` decorator.
+
+```python
+@task(timeout=30.0)  # 30 seconds
+async def slow_operation() -> str:
+    ...
+```
+
+When the timeout elapses, Pyfilament cancels the running coroutine via anyio's `fail_after`, records a `timeout` state transition, and re-raises `TimeoutError` to the caller.
+
+## Timeout with retries
+
+`timeout` applies **per attempt**, not across all retries combined. Each attempt gets its own full budget. The timeout covers the actual function execution only — it does not include time spent waiting to acquire a rate-limit token or a concurrency lease.
+
+```python
+@task(timeout=10.0, tries=3, delay=2.0)
+async def flaky_service() -> str:
+    # each attempt gets 10 seconds; up to 3 attempts
+    ...
+```
+
+In this example, the worst-case total elapsed time is `(10 + 2) × 3 = 36` seconds — up to 10 seconds of execution and a 2-second delay before each of the three attempts.
+
+## Retrying on TimeoutError
+
+By default, `TimeoutError` is not in `retry_exceptions`, so a timed-out attempt is not automatically retried. If you want Pyfilament to retry after a timeout, explicitly add `TimeoutError` to `retry_exceptions`.
+
+```python
+@task(timeout=5.0, tries=3, retry_exceptions=[TimeoutError, ConnectionError])
+async def external_call() -> dict:
+    # retries up to 3 times, including on timeout
+    ...
+```
+
+## Override at call time
+
+Pass `timeout` directly when calling the task to override the decorator default for that invocation only.
+
+```python
+result = await slow_operation(timeout=60.0)  # longer timeout for this call
+```
+
+## No timeout (default)
+
+By default, `timeout` is `None`, meaning Pyfilament imposes no time limit on function execution. The task runs until it completes or raises an exception.
+
+```python
+@task()  # no timeout — runs until done
+async def long_running_job() -> None:
+    ...
+```
+
+## Parameters reference
+
+<ParamField body="timeout" default="None" type="float | None">
+  Maximum execution time in seconds per attempt. When the limit is exceeded, the task transitions to the `timeout` state and raises `TimeoutError`. Set to `None` to allow unlimited execution time. Note that setting a `timeout` also determines the maximum lease duration when `max_concurrent` is used.
+</ParamField>
+
+<Warning>
+  Always set a timeout for tasks that call external services. Without one, a hung network call or unresponsive downstream dependency will block the task indefinitely.
+</Warning>

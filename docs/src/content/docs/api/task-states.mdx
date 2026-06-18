@@ -1,0 +1,58 @@
+---
+title: "task-states"
+---
+
+The `TaskState` enum defines all possible states for a Pyfilament task run. Import and use it to filter queries, assert on task run state in tests, or branch logic based on a run's outcome.
+
+## Import
+
+```python
+from filament.constants import TaskState
+```
+
+---
+
+## States
+
+| Value | String | Description |
+| --- | --- | --- |
+| `TaskState.CREATED` | `"created"` | Task run has been created but has not yet started executing. |
+| `TaskState.RUNNING` | `"running"` | Task is actively executing. |
+| `TaskState.RETRYING` | `"retrying"` | A previous attempt failed; the task is waiting before the next retry. |
+| `TaskState.SUCCESS` | `"success"` | Task completed successfully and a result is available. |
+| `TaskState.FAILURE` | `"failure"` | All retry attempts were exhausted; the task ended with an exception. |
+| `TaskState.TIMEOUT` | `"timeout"` | Task exceeded its configured `timeout`. |
+| `TaskState.CANCELLED` | `"cancelled"` | Task was cancelled externally, for example via `cancel_task_run_by_uuid()`. |
+| `TaskState.CACHED` | `"cached"` | Result was returned from the cache; the function body did not execute. |
+
+---
+
+## Terminal states
+
+`TaskState.TERMINAL` is a set of states from which a task run will not transition further:
+
+```python
+TaskState.TERMINAL = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.CANCELLED, TaskState.CACHED}
+```
+
+<Note>
+  `TaskState.TIMEOUT` is **not** in `TERMINAL`. A timed-out task may transition to `RETRYING` if retries are configured, and eventually to `SUCCESS` or `FAILURE`.
+</Note>
+
+---
+
+## Filtering by state
+
+Pass state strings to GraphQL queries to narrow results to runs in a particular state or set of states:
+
+```graphql
+query {
+  getTaskRuns(taskTypeId: "1", states: ["running", "retrying"]) {
+    taskUuid
+    state
+    stateSince
+  }
+}
+```
+
+See [GraphQL Queries](/api/graphql-queries) for the full query reference.

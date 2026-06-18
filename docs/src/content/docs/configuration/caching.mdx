@@ -1,0 +1,75 @@
+---
+title: "caching"
+---
+
+Pyfilament can cache task results in Redis, returning the cached value on subsequent calls with identical inputs instead of re-executing the function. Enable caching to avoid redundant work on expensive or slow operations.
+
+## Enable caching
+
+Set `cache=True` on the `@task` decorator. Pyfilament stores the return value after the first successful execution and returns it on every subsequent call with the same inputs. When a cached result is returned, the task run is recorded with a `CACHED` state rather than `SUCCESS`.
+
+```python
+@task(cache=True)
+async def compute(x: int, y: int) -> int:
+    return x + y
+
+result1 = await compute(2, 3)  # executes, caches result
+result2 = await compute(2, 3)  # returns cached result, state=CACHED
+```
+
+## Cache TTL
+
+By default, `cache_ttl` is `None`, meaning cached results never expire. Set `cache_ttl` (in seconds) to control how long a result stays valid.
+
+```python
+@task(cache=True, cache_ttl=3600)  # cache for 1 hour
+async def fetch_report(report_id: str) -> dict:
+    ...
+```
+
+After the TTL elapses, the next call re-executes the function and refreshes the cache entry.
+
+## Force refresh
+
+Bypass the cache for a single call by passing `refresh_cache=True` as a keyword argument at call time. Pyfilament re-executes the function and writes the new result back to the cache.
+
+```python
+result = await fetch_report("rpt-123", refresh_cache=True)
+```
+
+## Custom cache keys
+
+By default, Pyfilament derives the cache key by hashing the function reference and all resolved call parameters using its built-in `hash_cache_key` function. Provide a `cache_key` callable to control exactly which inputs participate in the key. The callable receives the wrapped function and a `dict` of resolved parameters and must return a string.
+
+```python
+def my_cache_key(func, params: dict) -> str:
+    return f"{func.__name__}:{params.get('report_id')}"
+
+@task(cache=True, cache_key=my_cache_key)
+async def fetch_report(report_id: str, verbose: bool = False) -> dict:
+    # `verbose` won't affect the cache key — results for a given report_id
+    # are shared regardless of the verbose flag
+    ...
+```
+
+## Parameters reference
+
+<ParamField body="cache" default="false" type="bool">
+  Enable result caching. When `True`, Pyfilament stores the return value in Redis after the first successful execution and returns it on subsequent calls with the same cache key.
+</ParamField>
+
+<ParamField body="cache_ttl" default="None" type="int | None">
+  Cache TTL in seconds. When `None`, cached results never expire (Redis key is set without an expiry). Set a value to automatically invalidate stale results.
+</ParamField>
+
+<ParamField body="cache_key" default="hash of function + parameters" type="callable">
+  A callable with the signature `(func, params: dict) -> str` that produces the cache key string. Override the default to exclude irrelevant parameters or build a custom scoping scheme.
+</ParamField>
+
+<ParamField body="refresh_cache" default="false" type="bool">
+  Bypass the cache for a single call, re-execute the function, and write the new result back to the cache. Pass as a keyword argument at call time.
+</ParamField>
+
+<Note>
+  Caching requires a running Redis instance. Pyfilament uses Redis to store and retrieve cached results.
+</Note>

@@ -1,0 +1,48 @@
+---
+title: "concurrency"
+---
+
+Pyfilament uses a Redis-backed semaphore to limit how many instances of a task can run at the same time. Set `max_concurrent` to protect shared resources or downstream services from being overwhelmed.
+
+## Setting a concurrency limit
+
+Pass `max_concurrent` to the `@task` decorator to cap the number of simultaneous executions.
+
+```python
+@task(max_concurrent=5)  # at most 5 concurrent executions
+async def process_file(file_id: str) -> str:
+    ...
+```
+
+## How it works
+
+Before executing, each task attempts to acquire a lease from the semaphore. If fewer than `max_concurrent` leases are currently held, the task acquires a lease immediately and proceeds. If all leases are taken, the task waits in a queue until one becomes available.
+
+Leases are released automatically when a task completes, fails, or times out. While a task holds a lease, it sends periodic heartbeats to Redis to signal it is still alive. If a worker stops sending heartbeats — for example because the process crashed — Redis treats the lease as stale and evicts it, unblocking the next waiting task.
+
+## Distributed concurrency
+
+The limit applies **globally across all workers** via Redis. All workers share the same semaphore, so `max_concurrent=5` means at most 5 total simultaneous executions across your entire fleet, not 5 per worker.
+
+## Combining with timeout
+
+Set a `timeout` alongside `max_concurrent` to control how quickly stale leases are reclaimed. When a `timeout` is configured, Pyfilament uses it as the semaphore lease TTL. Without a `timeout`, leases expire automatically after **1 hour** (3600 seconds) — so a crashed worker will not hold its lease forever, but it may block others for up to an hour.
+
+```python
+@task(max_concurrent=3, timeout=60.0)
+async def heavy_computation(data: dict) -> dict:
+    # lease TTL matches the timeout: stale leases expire after 60 seconds
+    ...
+```
+
+In this example, any lease that is not actively renewed by heartbeats will expire after 60 seconds, preventing long-lived blockages if a worker disappears mid-execution.
+
+## Parameters reference
+
+<ParamField body="max_concurrent" default="None" type="int | None">
+  Maximum number of simultaneous executions across all workers. Tasks that exceed this limit wait in a Redis-backed queue until a lease becomes available. Set to `None` to allow unlimited concurrency.
+</ParamField>
+
+<Warning>
+  Without a `timeout`, stale leases from crashed workers expire after 1 hour. Set a `timeout` appropriate to your task's expected runtime so that crashed-worker leases are reclaimed promptly rather than blocking others for up to an hour.
+</Warning>

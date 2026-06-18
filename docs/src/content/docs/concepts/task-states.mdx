@@ -1,0 +1,96 @@
+---
+title: "task-states"
+---
+
+Pyfilament tracks the lifecycle of every task run through a series of states. Understanding these states helps you monitor task health, diagnose failures, and build reliable retry and alerting strategies.
+
+## State reference
+
+| State | Description |
+| --- | --- |
+| `created` | The task run has been created but execution has not started yet |
+| `running` | The task is actively executing |
+| `retrying` | A try failed; the run is waiting before the next attempt |
+| `success` | The task completed successfully and produced a result |
+| `failure` | All retry attempts exhausted — the task raised an unhandled exception |
+| `timeout` | The task exceeded its configured `timeout`; a `TimeoutError` is raised and handled as described below |
+| `cancelled` | The task was cancelled by an explicit user request |
+| `cached` | A matching cached result was found; no execution occurred |
+
+## Terminal states
+
+The following states are **terminal** — once a task run enters one of them, it will not transition further:
+
+- `success`
+- `failure`
+- `cancelled`
+- `cached`
+
+The `created`, `running`, and `retrying` states are transient. A run in any of those states is still active and will eventually reach a terminal state.
+
+<Note>
+  `timeout` is **not** a terminal state. When a run times out, Pyfilament raises a `TimeoutError` internally, which is then caught by the failure handler and transitions the run to `failure`. If `TimeoutError` is included in `retry_exceptions`, the run instead transitions to `retrying` and the next attempt begins. The `timeout` state is an intermediate signal, not a final outcome.
+</Note>
+
+## State transitions
+
+The most common paths through the lifecycle are:
+
+```text
+# Happy path
+created → running → success
+
+# Retry path — one or more failures before eventual failure
+created → running → retrying → running → failure
+
+# Retry path — one failure then success
+created → running → retrying → running → success
+
+# Timeout during execution (leads to failure, not a terminal timeout)
+created → running → timeout → failure
+
+# Timeout with TimeoutError in retry_exceptions
+created → running → timeout → retrying → running → success
+
+# Cancelled during execution
+created → running → cancelled
+
+# Cache hit — execution skipped entirely
+created → cached
+```
+
+A run may cycle through `running → retrying → running` multiple times before reaching `success` or `failure`, up to the configured `tries` limit.
+
+## Observing state transitions
+
+Every state change is recorded with a `from_state`, `to_state`, and `state_since` timestamp. Query this history through the GraphQL API:
+
+```graphql
+query {
+  getTaskRun(taskUuid: "your-uuid") {
+    state
+    stateSince
+    stateTransitions {
+      fromState
+      toState
+      stateSince
+    }
+  }
+}
+```
+
+You can also filter task runs by state to find all currently running tasks or all failed tasks:
+
+```graphql
+query {
+  getTaskRuns(state: "failure") {
+    taskUuid
+    name
+    stateSince
+  }
+}
+```
+
+<Tip>
+  Use the Pyfilament dashboard to visualise state transitions on a timeline for any task run. The timeline view makes it easy to spot long `retrying` gaps, unexpected `timeout` events, or tasks stuck in `running`.
+</Tip>

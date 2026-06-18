@@ -1,0 +1,47 @@
+---
+title: "rate-limiting"
+---
+
+Pyfilament uses a Redis-backed token bucket to limit how frequently a task can execute. Set `rate_limit` to cap the number of executions per second across all workers.
+
+## Setting a rate limit
+
+Pass `rate_limit` (executions per second) to the `@task` decorator.
+
+```python
+@task(rate_limit=10.0)  # max 10 executions per second
+async def call_api(endpoint: str) -> dict:
+    ...
+```
+
+## How it works
+
+Pyfilament's token bucket refills at `rate_limit` tokens per second up to a maximum burst capacity of `rate_limit × 4` tokens. Each execution consumes one token. When no tokens are available, the task waits until enough tokens have accumulated and then proceeds — it does not fail immediately.
+
+For example, with `rate_limit=10.0`:
+
+- The bucket holds up to **40 tokens** (a short burst buffer).
+- Tokens refill at **10 per second**.
+- If the bucket is empty, the task calculates the minimum wait time needed to accumulate enough tokens and sleeps before retrying.
+
+## Distributed rate limiting
+
+The rate limit applies **globally across all workers**, not per-worker. Pyfilament stores the token bucket state in Redis, so every worker drawing on the same task type shares the same bucket. A `rate_limit=10.0` means at most 10 executions per second in total, regardless of how many workers are running.
+
+## Per-task type scoping
+
+Rate limits are scoped to the task type, identified by the function's address. Two different `@task`-decorated functions each have their own independent token bucket, even if they share the same `rate_limit` value.
+
+## Parameters reference
+
+<ParamField body="rate_limit" default="None" type="float | None">
+  Maximum executions per second across all workers. Uses a token-bucket algorithm with a burst capacity of `rate_limit × 4` tokens. Set to `None` to allow unlimited execution rate.
+</ParamField>
+
+<Note>
+  Rate limiting requires a running Redis instance. Pyfilament uses Redis to track token bucket state across workers.
+</Note>
+
+<Warning>
+  Rate limiting introduces wait time before a task executes. If you also set a `timeout`, the timeout applies only to the function execution itself and does not include time spent waiting for a rate-limit token. However, if waits are consistently long, consider relaxing the rate limit or increasing the timeout to avoid tasks timing out before they ever run.
+</Warning>

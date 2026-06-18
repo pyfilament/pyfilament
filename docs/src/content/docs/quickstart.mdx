@@ -1,0 +1,101 @@
+---
+title: "Pyfilament Quickstart: Run Your First Task in 5 Minutes"
+sidebarTitle: "Quickstart"
+description: "Install Pyfilament, decorate your first async function with @task, and run it locally or as a distributed worker in under 5 minutes."
+---
+
+Follow these steps to install Pyfilament, write your first task, and explore the key decorator options.
+
+<Steps>
+  <Step title="Install Pyfilament">
+    Install `pyfilament` from PyPI. Pyfilament requires Python 3.14 or higher.
+
+    <CodeGroup>
+      ```bash uv
+      uv add pyfilament
+      ```
+
+      ```bash pip
+      pip install pyfilament
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Write your first task">
+    Import `task` from `filament` and decorate any `async def` function. Calling the function creates a managed task run that executes immediately.
+
+    ```python
+    from filament import task
+    from asyncio import run
+
+    @task
+    async def greet(name: str) -> str:
+        return f"Hello, {name}!"
+
+    run(greet("World"))
+    ```
+
+    `@task` used without parentheses applies default configuration: one attempt, no timeout, no caching. Calling `greet("World")` returns the task run result directly — you do not need to unwrap it separately.
+  </Step>
+
+  <Step title="Add retries and a timeout">
+    Pass configuration arguments to `@task(...)` to make the function resilient. The example below retries up to three times, waits one second between attempts, and cancels any run that exceeds ten seconds.
+
+    ```python
+    from filament import task
+    from asyncio import run
+
+    @task(tries=3, timeout=10.0, delay=1.0)
+    async def fetch_data(url: str) -> dict:
+        # your async HTTP code here
+        ...
+
+    run(fetch_data("https://api.example.com/data"))
+    ```
+
+    | Argument | Type | Description |
+    | --- | --- | --- |
+    | `tries` | `int` | Total number of attempts before the run fails. Default: `1`. |
+    | `timeout` | `float \| None` | Seconds before the run is cancelled. Default: `None` (no limit). |
+    | `delay` | `float` | Seconds to wait between retry attempts. Default: `0`. |
+    | `backoff_base` | `float` | Exponential backoff multiplier applied to `delay`. Default: `2`. |
+  </Step>
+
+  <Step title="Use get_logger inside a task">
+    Call `get_logger()` from inside any task to get a logger that is automatically scoped to the current task run. Logs are captured in the task run record and visible in the observability UI.
+
+    ```python
+    from filament import task, get_logger
+    from asyncio import run
+
+    @task
+    async def process(item: str) -> str:
+        logger = get_logger()
+        logger.info(f"Processing {item}")
+        return item.upper()
+
+    run(process("hello"))
+    ```
+
+    When called outside a task, `get_logger()` returns a standard logger scoped to the calling module and function — so it is always safe to use.
+  </Step>
+
+  <Step title="Next steps">
+    You have installed Pyfilament and run your first task. Explore these topics to go further.
+
+    <CardGroup cols={2}>
+      <Card title="Core Concepts" icon="layer-group" href="/concepts/tasks">
+        Learn about task runs, state lifecycle, heartbeats, and call-stack tracking.
+      </Card>
+      <Card title="Task Configuration" icon="sliders" href="/api/task-decorator">
+        See every `@task` argument: caching, rate limiting, concurrency, exception filtering, and more.
+      </Card>
+      <Card title="Distributed Workers" icon="server" href="/concepts/workers">
+        Push task runs onto Redis queues and process them with remote worker processes.
+      </Card>
+      <Card title="Observability Dashboard" icon="chart-line" href="/observability/dashboard">
+        Start the built-in FastAPI + React server to monitor every task run in real time.
+      </Card>
+    </CardGroup>
+  </Step>
+</Steps>

@@ -1,0 +1,77 @@
+---
+title: "subtasks"
+---
+
+When a Pyfilament task calls another `@task` function, the inner task becomes a subtask of the outer one. Pyfilament automatically links them as parent and child, building a full execution tree you can explore in the dashboard.
+
+## Defining subtasks
+
+Call any `@task` function from inside another `@task` function and Pyfilament records the relationship. The outer task is the parent; the inner task is the child:
+
+```python
+from filament import task
+
+@task
+async def process_batch(batch_id: str) -> dict:
+    results = []
+    for i in range(10):
+        result = await process_item(batch_id=batch_id, index=i)
+        results.append(result)
+    return {"batch_id": batch_id, "results": results}
+
+@task
+async def process_item(batch_id: str, index: int) -> str:
+    return f"{batch_id}:{index} done"
+```
+
+`process_item` runs as a subtask of `process_batch`. The dashboard shows them in a tree, nested under their parent run.
+
+## Concurrent subtasks
+
+Run subtasks in parallel with `anyio` task groups to process multiple items at once:
+
+```python
+import anyio
+from filament import task
+
+@task
+async def parallel_batch(items: list[str]) -> list[str]:
+    results = []
+    async with anyio.create_task_group() as tg:
+        async def _run(item):
+            results.append(await process_item(item))
+        for item in items:
+            tg.start_soon(_run, item)
+    return results
+
+@task
+async def process_item(item: str) -> str:
+    return item.upper()
+```
+
+All `process_item` subtasks are launched concurrently. The parent task waits for the task group to complete before returning.
+
+## Viewing subtask trees
+
+The dashboard **Task Run** page shows a Gantt-style timeline with all subtasks nested under their parent. Each subtask appears as a horizontal bar sized to its execution duration. Click any bar to select that task and view its detail panel, which includes its state, parameters, result, and logs.
+
+## Subtask states
+
+Each subtask has its own independent state machine and lifecycle. A parent task can succeed even if subtasks are still running asynchronously, and a subtask can fail without automatically failing its parent — your parent task code decides how to handle errors returned or raised by child calls.
+
+## Accessing parent context
+
+Inside any task, call `get_current_task_run()` to retrieve the live run object for the currently executing task:
+
+```python
+from filament.hooks import get_current_task_run
+
+@task
+async def child_task():
+    run = get_current_task_run()
+    print(f"My UUID: {run.uuid}")
+```
+
+`get_current_task_run()` raises `RuntimeError` if called outside a task execution context.
+
+Parent-child linkage is recorded automatically — when a task runs inside another task, Pyfilament captures the parent's UUID and stores it on the child's run record. This relationship is reflected in the `parent_task_uuid` field on every task run returned by the API, and is what drives the nested tree view in the dashboard.

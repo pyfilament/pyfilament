@@ -1,0 +1,89 @@
+---
+title: "cancellation"
+---
+
+Pyfilament supports graceful task cancellation. Cancel a running task from the same process, from a remote process using its UUID, or directly from the dashboard. Cancellation is cooperative — the task must reach an `await` point to respond to the signal.
+
+## Cancel from the same process
+
+If you hold a reference to a task run object, call `.cancel()` on it. This sends a cancellation signal to the running task; the task will stop at its next `await` point and transition to the `cancelled` state:
+
+```python
+from filament import task
+import asyncio
+
+@task
+async def long_running() -> str:
+    await asyncio.sleep(60)
+    return "done"
+
+async def main():
+    task_run = long_running()
+    task_run.start()
+    await asyncio.sleep(1)
+    task_run.cancel()  # signal cancellation
+    try:
+        await task_run
+    except Exception:
+        pass  # task is cancelled
+
+asyncio.run(main())
+```
+
+## Cancel by UUID (remote)
+
+Use `cancel_task_run_by_uuid()` from `filament.hooks` to cancel any task from any process — you only need its UUID:
+
+```python
+from filament.hooks import cancel_task_run_by_uuid
+
+await cancel_task_run_by_uuid("your-task-uuid")
+```
+
+The signature is:
+
+```python
+async def cancel_task_run_by_uuid(task_uuid: str) -> None
+```
+
+This looks up the task run in the database and triggers the same cancellation flow as `.cancel()`. The cancellation signal reaches the worker even if it is running in a different process or on a different host.
+
+## Cancel via GraphQL
+
+Send a `cancelTaskRun` mutation to the GraphQL API. You can identify the run by either its numeric `id` or its `taskUuid`. The mutation returns the updated `TaskRun` object:
+
+```graphql
+mutation {
+  cancelTaskRun(taskUuid: "your-task-uuid") {
+    taskUuid
+    state
+  }
+}
+```
+
+You can also cancel by numeric ID:
+
+```graphql
+mutation {
+  cancelTaskRun(id: "42") {
+    taskUuid
+    state
+  }
+}
+```
+
+## Cancel from the dashboard
+
+On the **Task Run** page, click the **Cancel** button to cancel any task that is currently in a cancellable state. The dashboard issues the cancellation request for you and refreshes the task run view automatically.
+
+## Cancelled state
+
+After a cancellation signal is delivered and the task responds, it transitions to the `cancelled` state. The `cancelled` state is terminal — Pyfilament does not schedule retries for cancelled runs. Cancellation is treated as intentional, not as a failure that should be retried.
+
+## Propagation
+
+When a parent task is cancelled, any in-flight subtasks it is currently awaiting are also cancelled. The cancellation propagates down the subtask tree so the entire execution branch terminates cleanly, rather than leaving orphaned child runs consuming resources.
+
+<Note>
+  Cancellation is cooperative. The task must be at an `await` point — sleeping, awaiting I/O, or waiting between subtasks — to respond to the cancellation signal. Tasks executing tight CPU-bound loops without any `await` points may not cancel immediately, because Python cannot interrupt synchronous code mid-execution. Structure long CPU work across multiple `await` points to keep your tasks cancellation-responsive.
+</Note>

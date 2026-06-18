@@ -1,0 +1,80 @@
+---
+title: "workers"
+---
+
+Pyfilament workers are long-running processes that pull tasks from a Redis Streams queue and execute them. You can run multiple workers for horizontal scaling without any additional configuration — Redis handles the coordination.
+
+## How workers work
+
+Every `@task` function backed by a `FilamentRemoteTaskType` has its own dedicated Redis Stream, named after the task type's `.name` attribute. When you call `.request()`, Pyfilament serialises the task run and appends it to that stream.
+
+Workers use Redis consumer groups so that each enqueued task is delivered to exactly one worker. If you run ten workers for the same task type, they share the work — no task is executed twice. Workers acknowledge messages only after the task reaches a terminal state, so a worker crash before acknowledgement makes the message available for another worker to reprocess.
+
+## Starting a worker
+
+Call `.serve()` on any `@task`-decorated function to start a worker loop for that task type. The worker blocks indefinitely, dequeuing and executing tasks as they arrive:
+
+```python
+import asyncio
+from filament import task
+
+@task
+async def process_job(job_id: str) -> str:
+    return f"processed {job_id}"
+
+asyncio.run(process_job.serve())
+```
+
+The worker automatically sets up the Redis Stream and consumer group on first start.
+
+## Graceful shutdown
+
+Pass an `anyio.Event` to `.serve()` as `shutdown_event`. The worker finishes executing any in-progress task and then exits cleanly when you set the event:
+
+```python
+import asyncio
+import signal
+import anyio
+from filament import task
+
+@task
+async def process_job(job_id: str) -> str:
+    return f"processed {job_id}"
+
+async def main():
+    shutdown = anyio.Event()
+
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(signal.SIGTERM, shutdown.set)
+
+    await process_job.serve(shutdown_event=shutdown)
+
+asyncio.run(main())
+```
+
+Without a `shutdown_event`, the worker runs until the process is terminated.
+
+## Submitting tasks to the queue
+
+Use `.request()` from any process — a web server, a CLI script, another task — to enqueue work for a running worker:
+
+```python
+task_run = await process_job.request("job-123")
+result = await task_run
+```
+
+`.request()` returns a `FilamentRemoteTaskRun`. Awaiting it blocks until the worker publishes the result back over Redis. For async generator tasks, await the request first and then iterate with `async for`:
+
+```python
+task_run = await stream_task.request("input")
+async for chunk in task_run:
+    print(chunk)
+```
+
+## Scaling
+
+To scale horizontally, run the same worker script in multiple processes or on multiple machines. Redis consumer groups distribute tasks automatically — each task is delivered to exactly one worker regardless of how many are running. Add or remove worker processes at any time without downtime or reconfiguration.
+
+<Note>
+  Workers require a running Redis instance. Set the `REDIS_URL` environment variable to point at your Redis server before starting a worker or calling `.request()`.
+</Note>

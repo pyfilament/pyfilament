@@ -1,0 +1,82 @@
+---
+title: "retries"
+---
+
+Pyfilament retries failed tasks automatically. Configure the number of attempts, the delay between retries, exponential backoff, and which exceptions trigger a retry — all on the `@task` decorator.
+
+## Basic retry configuration
+
+Pass `tries` to set the total number of attempts, including the first one. The default is `1`, which means one attempt and no retries. Set `tries=3` to allow one initial attempt plus two retries.
+
+```python
+@task(tries=3)
+async def fetch_data(url: str) -> dict:
+    ...
+```
+
+## Delay and backoff
+
+Use `delay` to add a wait between attempts and `backoff_base` to grow that wait exponentially on each successive retry.
+
+```python
+@task(
+    tries=5,
+    delay=1.0,        # initial delay in seconds
+    backoff_base=2,   # each retry multiplies delay by this
+)
+async def send_email(to: str) -> None:
+    ...
+```
+
+With `delay=1.0` and `backoff_base=2`, the wait before each successive retry is `delay × backoff_base^i × jitter`, where `i` starts at `0` for the first retry. This produces minimum waits of approximately **1 s**, **2 s**, **4 s**, and **8 s**. A random jitter factor between 1.0× and 1.5× is applied to each interval to spread load across concurrent workers.
+
+## Filtering which exceptions retry
+
+By default, any `Exception` triggers a retry. Narrow or override that behaviour with `retry_exceptions` and `no_retry_exceptions`.
+
+```python
+@task(
+    tries=3,
+    retry_exceptions=[ConnectionError, TimeoutError],
+    no_retry_exceptions=[ValueError],
+)
+async def call_api() -> dict:
+    ...
+```
+
+- `retry_exceptions` — only exceptions in this list trigger a retry.
+- `no_retry_exceptions` — exceptions in this list are **never** retried, even if they also appear in `retry_exceptions`. Pyfilament checks `no_retry_exceptions` first.
+
+## Override at call time
+
+Every configuration option can be overridden for a single call by passing it as a keyword argument. The value you pass takes precedence over the decorator-level default for that execution only.
+
+```python
+result = await fetch_data(url="...", tries=1)  # disable retries for this call
+```
+
+## Parameters reference
+
+<ParamField body="tries" default="1" type="int">
+  Total number of attempts, including the first. The default of `1` means one attempt with no retries. Set to a higher value to enable retries.
+</ParamField>
+
+<ParamField body="delay" default="0" type="float">
+  Base delay in seconds before the first retry. When `0`, retries execute immediately.
+</ParamField>
+
+<ParamField body="backoff_base" default="2" type="float">
+  Multiplier applied to `delay` on each successive retry. The wait before retry `i` (zero-indexed) is `delay × backoff_base^i × jitter`, where jitter is a random value between 1.0 and 1.5.
+</ParamField>
+
+<ParamField body="retry_exceptions" default="[Exception]" type="list">
+  Exception types that trigger a retry. Defaults to all exceptions. Pass a narrower list to retry only specific failure modes.
+</ParamField>
+
+<ParamField body="no_retry_exceptions" default="[]" type="list">
+  Exception types that are never retried, even if they appear in `retry_exceptions`. Useful for skipping retries on unrecoverable errors such as `ValueError`.
+</ParamField>
+
+<Note>
+  anyio cancellation is never retried, regardless of what you set in `retry_exceptions`. A cancelled task raises immediately without further attempts.
+</Note>

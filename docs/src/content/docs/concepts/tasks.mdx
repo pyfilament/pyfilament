@@ -1,0 +1,112 @@
+---
+title: "Defining and Calling Tasks in Pyfilament"
+sidebarTitle: "Tasks"
+description: "A Pyfilament task is an async Python function decorated with @task, adding retries, timeouts, caching, rate limiting, and distributed execution capabilities."
+---
+
+A Pyfilament task is an async Python function decorated with `@task`. The decorator transforms it into a `FilamentRemoteTaskType` — a managed task type that tracks state, handles failures, and can run locally or on distributed workers via Redis Streams.
+
+## Defining a task
+
+Decorate any async function with `@task` to register it as a Pyfilament task:
+
+```python
+from filament import task
+
+@task
+async def my_task(x: int, y: int) -> int:
+    return x + y
+```
+
+Pyfilament validates at decoration time that your function is a coroutine or async generator. Synchronous functions raise an `AssertionError`.
+
+## Task configuration
+
+Pass configuration kwargs directly to `@task` to set default behaviour for every run:
+
+```python
+@task(tries=3, timeout=30.0, delay=1.0, backoff_base=2)
+async def my_task(x: int) -> str:
+    ...
+```
+
+The full set of configuration options is listed below.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `tries` | `int` | `1` | Maximum number of execution attempts before failing |
+| `timeout` | `float \| None` | `None` | Seconds before the run times out and raises a `TimeoutError` |
+| `delay` | `float` | `0` | Base seconds to wait between retry attempts |
+| `backoff_base` | `float` | `2` | Exponential backoff multiplier applied to `delay` between retries |
+| `retry_exceptions` | `list` | `[Exception]` | Exception types that trigger a retry |
+| `no_retry_exceptions` | `list` | `[]` | Exception types that skip retries and fail immediately |
+| `cache` | `bool` | `False` | Return a cached result when an identical call has already succeeded |
+| `cache_key` | `callable` | hash of args | Function that computes the cache key from the task function and its parameters |
+| `cache_ttl` | `int \| None` | `None` | Seconds before a cached result expires |
+| `refresh_cache` | `bool` | `False` | Force re-execution and overwrite any existing cached result |
+| `max_concurrent` | `int \| None` | `None` | Maximum simultaneous runs of this task across all workers |
+| `rate_limit` | `float \| None` | `None` | Maximum calls per second across all workers |
+| `heartbeat` | `bool` | `True` | Emit heartbeat events during execution |
+| `heartbeat_interval` | `float \| None` | `60` | Seconds between heartbeat events |
+| `monitor` | `bool` | `True` | Watch for cancellation requests during execution |
+| `monitor_interval` | `float \| None` | `10` | Seconds between cancellation-monitor polling intervals |
+| `propagate` | `bool` | `True` | Re-raise exceptions from the task run when awaited |
+| `start_immediately` | `bool` | `False` | Start execution as soon as the task run object is created, without waiting for an explicit await |
+| `is_redact_input` | `bool` | `False` | Omit input parameters from persisted state |
+| `is_redact_output` | `bool` | `False` | Omit the result from persisted state |
+
+All of these options are also accepted as **call-time kwargs**. If you pass a config option when calling the task and it is not a declared parameter of your function, Pyfilament removes it from the function arguments and applies it to that run's configuration only:
+
+```python
+# Override timeout for a single call without changing the task definition
+result = await my_task(x=1, timeout=60.0)
+```
+
+## Calling tasks
+
+Calling a `@task`-decorated function returns a `FilamentTaskRun` object. Awaiting it executes the task and returns the result:
+
+```python
+# Local execution — run the task in the current process
+result = await my_task(42)
+```
+
+To dispatch the task to a remote worker instead, use `.request()`:
+
+```python
+# Remote execution — enqueue to a worker via Redis Streams
+task_run = await my_task.request(42)
+result = await task_run
+```
+
+`.request()` serialises the call and publishes it to the task's Redis Stream. Any running worker for that task type will pick it up. See [Workers](/concepts/workers) for details.
+
+## Async generators
+
+Tasks can be async generator functions for streaming results. Iterate over the task run directly with `async for`:
+
+```python
+@task
+async def stream_items(items: list) -> None:
+    for item in items:
+        yield item
+
+async for item in stream_items([1, 2, 3]):
+    print(item)
+```
+
+Pyfilament forwards each yielded value through an in-memory stream as the generator produces it, so your consumer receives items before the task finishes.
+
+## Task methods
+
+| Method | Description |
+|---|---|
+| `my_task(*args, **kwargs)` | Create and return a `FilamentTaskRun`. Await it to execute locally. |
+| `await my_task.request(*args, **kwargs)` | Enqueue the task for a remote worker and return a `FilamentRemoteTaskRun`. |
+| `await my_task.serve(shutdown_event=None)` | Start a long-running worker loop that dequeues and executes tasks from Redis Streams. Pass an `anyio.Event` to support graceful shutdown. |
+
+<Note>
+  Task functions must be async — either a coroutine (`async def`) or an async
+  generator (`async def` with `yield`). Synchronous functions are not supported
+  and will raise an `AssertionError` at decoration time.
+</Note>

@@ -1,0 +1,76 @@
+---
+title: "Install and Configure Pyfilament for Your Python Project"
+sidebarTitle: "Installation"
+description: "Install Pyfilament via uv or pip, set your FILAMENT_REDIS_HOST environment variables, and verify your setup before writing your first task."
+---
+
+Pyfilament is published to [PyPI](https://pypi.org/project/pyfilament/) and installs with a single command. It requires **Python 3.14 or higher**. Redis is required for distributed workers, result caching, and the observability dashboard — but you can run local tasks without it.
+
+## Install Pyfilament
+
+<CodeGroup>
+  ```bash uv
+  uv add pyfilament
+  ```
+
+  ```bash pip
+  pip install pyfilament
+  ```
+</CodeGroup>
+
+<Tip>
+  Use `uv` for the fastest install experience. `uv` manages Python versions automatically, so it will download and pin Python 3.14 for your project if you do not already have it.
+</Tip>
+
+## Requirements
+
+- **Python 3.14 or higher** — Pyfilament targets CPython 3.14 and will not install on earlier versions.
+- **Redis 7+** — Required for distributed workers, result caching, rate limiting, and the observability dashboard.
+
+<Note>
+  Local-only tasks — those without distributed workers or caching — work without Redis. You only need Redis when you enable `cache=True`, `rate_limit`, `max_concurrent` with remote workers, or the observability server.
+</Note>
+
+## Configure Redis
+
+Pyfilament reads your Redis connection from three environment variables. If they are not set, it defaults to `localhost:6379` on database `0`.
+
+Set these in your shell or in a `.env` file at the root of your project:
+
+```ini .env
+FILAMENT_REDIS_HOST=localhost
+FILAMENT_REDIS_PORT=6379
+FILAMENT_REDIS_DB=0
+```
+
+Pyfilament loads `.env` automatically at startup, so no additional setup is required.
+
+## Verify your installation
+
+Create a small script to confirm everything is wired up correctly:
+
+```python verify.py
+from filament import task
+from asyncio import run
+
+@task
+async def ping() -> str:
+    return "pong"
+
+result = run(ping())
+print(result)  # pong
+```
+
+Run it:
+
+```bash
+python verify.py
+```
+
+You should see `pong` printed to stdout. If you see an import error, confirm that your virtual environment is active and that `pyfilament` is listed in your installed packages.
+
+## Start the observability server
+
+Pyfilament ships a **FastAPI** backend and a **React** frontend that give you a live dashboard for monitoring task runs: state timelines, structured logs, captured inputs and outputs, and worker status.
+
+To start the server, point it at the same Redis instance your tasks use. See [Observability Dashboard](/observability/dashboard) for full configuration and startup instructions.

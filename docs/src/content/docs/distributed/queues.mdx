@@ -1,0 +1,43 @@
+---
+title: "queues"
+---
+
+Pyfilament uses Redis Streams as its distributed task queue. Each `@task` type gets a dedicated queue, and messages persist in Redis regardless of whether any workers are running at the time of submission.
+
+## Queue architecture
+
+Every task type has its own isolated queue. Submitted runs are stored durably in Redis and delivered to workers with exactly-once semantics — two workers serving the same task type will never execute the same run twice.
+
+Key durability properties:
+
+- **Per-type queues** — each task type has its own queue, so a burst of one task type does not block or delay another.
+- **Persistence across restarts** — messages remain in Redis even when all workers are offline. When a worker comes back online it picks up any runs that arrived while it was away.
+- **Crash recovery** — a message is only removed from the queue after the worker successfully records a final result. If a worker crashes mid-execution, the message remains available for reprocessing.
+
+## Submitting tasks to the queue
+
+Call `.request()` on a task function to enqueue a run without blocking your current coroutine. `await` the returned run object when you need the result:
+
+```python
+from filament import task
+
+@task
+async def send_notification(user_id: str, message: str) -> bool:
+    ...
+
+# Submit to queue (non-blocking)
+task_run = await send_notification.request("user-123", "Hello!")
+
+# Wait for result
+result = await task_run
+```
+
+`.request()` returns a `FilamentRemoteTaskRun`. You can store it, pass it around, or `await` it later — the task is already running on a worker as soon as `.request()` returns.
+
+## Stale message cleanup
+
+Pyfilament automatically cleans up stale pending messages every time a new task is enqueued. Any message that has been pending for more than **3 days** is acknowledged and removed. After stale messages are cleared, the queue is trimmed to match the oldest remaining pending message, keeping Redis memory usage bounded.
+
+<Note>
+  The queue requires Redis. Set the `REDIS_URL` environment variable before starting your workers or API server.
+</Note>

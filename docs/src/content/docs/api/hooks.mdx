@@ -1,0 +1,84 @@
+---
+title: "hooks"
+---
+
+Pyfilament provides three hook functions for interacting with task runs programmatically: `get_current_task_run()` to inspect the currently executing task, `cancel_task_run_by_uuid()` to cancel any task by its UUID, and `get_logger()` to obtain a structured logger scoped to the current task run.
+
+## Import
+
+```python
+from filament.hooks import get_current_task_run, cancel_task_run_by_uuid
+```
+
+---
+
+## get\_current\_task\_run()
+
+**Signature:** `get_current_task_run() -> FilamentTaskRun`
+
+Returns the task run for the task currently executing in the calling coroutine. Use this to read the task's UUID, name, configuration, or other metadata from within your task function.
+
+**Raises:** `RuntimeError` if called outside a running `@task` function.
+
+**Example:**
+
+```python
+from filament import task
+from filament.hooks import get_current_task_run
+
+@task
+async def my_task() -> str:
+    run = get_current_task_run()
+    print(f"Task UUID: {run.uuid}")
+    print(f"Task name: {run.name}")
+    return run.uuid
+```
+
+---
+
+## cancel\_task\_run\_by\_uuid()
+
+**Signature:** `async cancel_task_run_by_uuid(task_uuid: str) -> None`
+
+Cancels a task run by its UUID. You can call this from any process — it publishes a cancellation signal via Redis, which the target task's cancel monitor picks up. The target task must be running with `monitor=True` (the default) to receive the signal.
+
+**Parameters:**
+
+<ParamField body="task_uuid" type="str" required>
+  The UUID of the task run to cancel.
+</ParamField>
+
+**Returns:** `None`. Logs a warning if no task run with the given UUID exists in the database.
+
+**Example:**
+
+```python
+from filament.hooks import cancel_task_run_by_uuid
+
+# Cancel from any async context
+await cancel_task_run_by_uuid("abc123-uuid")
+```
+
+---
+
+## get\_logger()
+
+**Import:** `from filament import get_logger`
+
+Returns a standard Python `Logger` configured to emit structured JSON log entries to Redis, tagged with the current task run's UUID and `func_address`. Use this to emit logs that appear alongside the task run in the Pyfilament dashboard.
+
+When called outside a task context, returns a logger named after the calling module and function instead.
+
+**Example:**
+
+```python
+from filament import task, get_logger
+
+@task
+async def my_task() -> str:
+    logger = get_logger()
+    logger.info("Task started")
+    return "done"
+```
+
+Log entries are stored in Redis under the key `filament_log:{func_address}:{task_uuid}` and are accessible via the [GraphQL `logs` field](/api/graphql-queries) on a `TaskRun`.

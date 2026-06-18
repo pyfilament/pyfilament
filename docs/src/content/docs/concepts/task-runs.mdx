@@ -1,0 +1,104 @@
+---
+title: "Task Runs: Execution Instances in Pyfilament"
+sidebarTitle: "Task Runs"
+description: "A task run is a single execution of a Pyfilament task. Each run has a UUID, state, parent-child relationships, parameters, result, and a full state timeline."
+---
+
+Every time you call a `@task` function, Pyfilament creates a task run — a tracked execution instance with a unique UUID, state, parent/child relationships, and a full history. Task runs are persisted to the database and queryable through the GraphQL API and dashboard.
+
+## Task run properties
+
+The Python `FilamentTaskRun` object exposes the following attributes:
+
+| Property | Type | Description |
+|---|---|---|
+| `uuid` | `str` | Unique identifier for this execution instance |
+| `name` | `str` | Human-readable label, defaults to `task_name(uuid)` |
+| `config` | `FilamentTaskConfig` | The resolved configuration for this run |
+| `task_args` | `tuple` | Positional arguments passed to the task function |
+| `task_kwargs` | `dict` | Keyword arguments passed to the task function |
+| `worker_id` | `str \| None` | ID of the worker executing this run, if dispatched remotely |
+
+The database record for a task run additionally tracks the following fields, accessible via the GraphQL API and dashboard:
+
+| Field | Type | Description |
+|---|---|---|
+| `task_uuid` | `str` | Unique identifier matching the Python run's `uuid` |
+| `state` | `str` | Current execution state (see [Task States](/concepts/task-states)) |
+| `state_since` | `datetime` | Timestamp when the run entered its current state |
+| `heartbeat` | `datetime` | Timestamp of the last heartbeat event |
+| `run_count` | `int` | Number of execution attempts made so far |
+| `parent_task_uuid` | `str \| None` | UUID of the parent task run, if this is a subtask |
+| `parameters_json` | `str \| None` | Serialised input parameters (omitted when `is_redact_input=True`) |
+| `result_json` | `str \| None` | Serialised result (omitted when `is_redact_output=True`) |
+
+## Awaiting a task run
+
+Calling a `@task` function returns a task run object without executing anything yet. Await it to start execution and receive the result:
+
+```python
+task_run = my_task(42)   # creates the task run
+result = await task_run  # executes the task and returns the result
+```
+
+You can also await the call expression directly:
+
+```python
+result = await my_task(42)
+```
+
+For async generator tasks, iterate with `async for` instead of awaiting:
+
+```python
+async for item in stream_items([1, 2, 3]):
+    print(item)
+```
+
+## Cancellation
+
+Call `task_run.cancel()` on any local task run to signal cancellation. This sets an internal cancellation event that the runtime monitors — it does not immediately terminate the coroutine. The monitor detects the event and cancels the running task group, causing the run to transition to the `cancelled` state:
+
+```python
+task_run = my_task(42)
+task_run.cancel()
+```
+
+For remote task runs executing on a worker, use `cancel_task_run_by_uuid()` from `filament.hooks`. This publishes a cancellation signal over Redis that the worker picks up and forwards to the running task:
+
+```python
+from filament.hooks import cancel_task_run_by_uuid
+
+await cancel_task_run_by_uuid("your-task-uuid")
+```
+
+## Parent and child tasks
+
+When one task calls another, Pyfilament automatically links the inner task run as a child of the outer one. The child's `parent_task_uuid` is set to the parent's UUID, giving you a complete execution tree:
+
+```python
+@task
+async def parent():
+    result = await child()  # child is tracked as a subtask of parent
+    return result
+
+@task
+async def child():
+    return 42
+```
+
+You can traverse this tree through the GraphQL API or the dashboard to understand the full call hierarchy for any top-level run.
+
+## Getting the current task run
+
+Inside a running task, call `get_current_task_run()` from `filament.hooks` to access the live task run object. This is useful for logging the UUID, inspecting configuration, or passing the run's identity to external systems:
+
+```python
+from filament.hooks import get_current_task_run
+
+@task
+async def my_task():
+    task_run = get_current_task_run()
+    print(task_run.uuid)
+```
+
+`get_current_task_run()` reads from a call-stack context variable. It raises a `RuntimeError` if called outside of an active task execution.
