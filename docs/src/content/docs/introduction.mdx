@@ -3,7 +3,7 @@ title: "introduction"
 description: "Pyfilament wraps async functions with durable execution: retries, timeouts, caching, rate limits, distributed workers, and a live observability UI."
 ---
 
-import { Card } from '@astrojs/starlight/components';
+import { Card, CardGrid } from '@astrojs/starlight/components';
 
 Pyfilament is a lightweight Python task framework designed for engineers who want durable, observable task execution without adopting a heavy orchestration platform. Wrap any async function with the `@task` decorator and immediately gain retries, timeouts, caching, rate limiting, concurrency controls, and distributed worker dispatch — all configured directly on the decorator, not scattered across infrastructure code.
 
@@ -15,7 +15,7 @@ When you call a decorated function, Pyfilament creates a **task run** — a trac
 
 ## Key features
 
-<CardGroup cols={2}>
+<CardGrid>
   <Card title="Retries & Backoff" icon="rotate">
     Retry failing tasks up to `tries` times. Set a fixed `delay` between attempts and a `backoff_base` multiplier for exponential backoff. Scope retries to specific exception types with `retry_exceptions` and `no_retry_exceptions`.
   </Card>
@@ -47,7 +47,7 @@ When you call a decorated function, Pyfilament creates a **task run** — a trac
   <Card title="Observability UI" icon="chart-line">
     The built-in FastAPI server and React dashboard surface live task state, state timelines, structured logs, and captured arguments for every run — no third-party tool required.
   </Card>
-</CardGroup>
+</CardGrid>
 
 ## How it works
 
@@ -62,7 +62,7 @@ When you call a decorated function, Pyfilament creates a **task run** — a trac
 
 ## Next steps
 
-<CardGroup cols={2}>
+<CardGrid>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
     Install Pyfilament and run your first task in under 5 minutes.
   </Card>
@@ -70,4 +70,4 @@ When you call a decorated function, Pyfilament creates a **task run** — a trac
   <Card title="Core Concepts" icon="layer-group" href="/concepts/tasks">
     Go deeper on task runs, state lifecycle, workers, and queues.
   </Card>
-</CardGroup>
+</CardGrid>

@@ -4,7 +4,7 @@ sidebarTitle: "Quickstart"
 description: "Install Pyfilament, decorate your first async function with @task, and run it locally or as a distributed worker in under 5 minutes."
 ---
 
-import { Card } from '@astrojs/starlight/components';
+import { Card, CardGrid } from '@astrojs/starlight/components';
 
 Follow these steps to install Pyfilament, write your first task, and explore the key decorator options.
 
@@ -85,7 +85,7 @@ Follow these steps to install Pyfilament, write your first task, and explore the
   <Step title="Next steps">
     You have installed Pyfilament and run your first task. Explore these topics to go further.
 
-    <CardGroup cols={2}>
+    <CardGrid>
       <Card title="Core Concepts" icon="layer-group" href="/concepts/tasks">
         Learn about task runs, state lifecycle, heartbeats, and call-stack tracking.
       </Card>
@@ -98,6 +98,6 @@ Follow these steps to install Pyfilament, write your first task, and explore the
       <Card title="Observability Dashboard" icon="chart-line" href="/observability/dashboard">
         Start the built-in FastAPI + React server to monitor every task run in real time.
       </Card>
-    </CardGroup>
+    </CardGrid>
   </Step>
 </Steps>

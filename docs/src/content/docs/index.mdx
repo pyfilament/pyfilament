@@ -4,11 +4,11 @@ sidebarTitle: "Home"
 description: "Pyfilament adds retries, timeouts, caching, rate limiting, and distributed workers to any async Python function with a single decorator."
 ---
 
-import { Card } from '@astrojs/starlight/components';
+import { Card, CardGrid } from '@astrojs/starlight/components';
 
 Welcome to Pyfilament — a lightweight Python task framework that turns any async function into a managed, durable task with a single `@task` decorator. Add retries, timeouts, caching, rate limiting, concurrency controls, and distributed workers to your async code without restructuring it.
 
-<CardGroup cols={2}>
+<CardGrid>
   <Card title="Introduction" icon="book-open" href="/introduction">
     Learn what Pyfilament is, how it works, and when to use it.
   </Card>
@@ -21,7 +21,7 @@ Welcome to Pyfilament — a lightweight Python task framework that turns any asy
   <Card title="API Reference" icon="code" href="/api/task-decorator">
     Explore every parameter of the `@task` decorator and the full public API.
   </Card>
-</CardGroup>
+</CardGrid>
 
 ## Get up and running in three steps
 
@@ -57,7 +57,7 @@ Welcome to Pyfilament — a lightweight Python task framework that turns any asy
 
 ## Feature highlights
 
-<CardGroup cols={2}>
+<CardGrid>
   <Card title="Retries & Backoff" icon="rotate">
     Automatically retry failing tasks with configurable attempt counts, fixed delays, and exponential backoff. Control which exception types trigger a retry.
   </Card>
@@ -70,4 +70,4 @@ Welcome to Pyfilament — a lightweight Python task framework that turns any asy
   <Card title="Distributed Workers" icon="server">
     Dispatch tasks to remote workers via Redis-backed queues. Scale horizontally and monitor every run through the built-in observability UI.
   </Card>
-</CardGroup>
+</CardGrid>
