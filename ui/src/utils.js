@@ -1,7 +1,9 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
 
+dayjs.extend(utc);
 const TERMINAL_STATES = ['success', 'failure', 'cached', 'cancelled'];
 
 dayjs.extend(duration);
@@ -35,10 +37,10 @@ function getTaskDuration(task) {
 function getSince(timestamp, relativeTo = null) {
     if (relativeTo) {
         return (
-            '@' + getDurationHumanReadable(dayjs(timestamp).toDate().getTime() - dayjs(relativeTo).toDate().getTime())
+            '@' + getDurationHumanReadable(fromUtc(timestamp).toDate().getTime() - fromUtc(relativeTo).toDate().getTime())
         );
     }
-    return dayjs(timestamp).from(dayjs());
+    return fromUtc(timestamp).from(dayjs());
 }
 
 const getDurationHumanReadable = (duration) => {
@@ -56,4 +58,9 @@ const getDurationHumanReadable = (duration) => {
     return durationHumanReadable;
 };
 
-export { getDurationHumanReadable, getShortUuid, getSince, getTaskDuration, getTaskEnd, isTerminalState };
+function fromUtc(timestamp) {
+    return dayjs.utc(timestamp);
+}
+
+export { fromUtc, getDurationHumanReadable, getShortUuid, getSince, getTaskDuration, getTaskEnd, isTerminalState };
+

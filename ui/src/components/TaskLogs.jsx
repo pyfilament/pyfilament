@@ -1,6 +1,5 @@
 import { useQuery } from '@apollo/client/react';
 import { useLocalStorage } from '@uidotdev/usehooks';
-import dayjs from 'dayjs';
 import _ from 'lodash';
 import { useContext, useEffect, useState } from 'react';
 
@@ -15,12 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { GET_TASK_RUN_LOGS } from '@/queries';
+import { fromUtc } from '@/utils';
 
 const getEventTime = (taskOrStateTransition) => {
     if (taskOrStateTransition.__typename == 'TaskRunStateTransition') {
-        return dayjs(taskOrStateTransition.stateSince);
+        return fromUtc(taskOrStateTransition.stateSince);
     } else if (taskOrStateTransition.__typename == 'TaskRunLog') {
-        return dayjs(taskOrStateTransition.timestamp * 1000);
+        return fromUtc(taskOrStateTransition.timestamp * 1000);
     } else {
         throw new Error('Unknown type');
     }

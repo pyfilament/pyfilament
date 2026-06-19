@@ -1,8 +1,8 @@
-import dayjs from 'dayjs';
 
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { fromUtc } from '@/utils';
 
 function StateBadge({ state, since = null }) {
     const stateColors = {
@@ -29,7 +29,7 @@ function StateBadge({ state, since = null }) {
                     {state}
                 </Badge>
             </TooltipTrigger>
-            <TooltipContent>{dayjs(since).format('YYYY-MM-DD HH:mm:ss')}</TooltipContent>
+            <TooltipContent>{fromUtc(since).format('YYYY-MM-DD HH:mm:ss')}</TooltipContent>
         </Tooltip>
     );
 }

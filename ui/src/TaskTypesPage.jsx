@@ -1,5 +1,4 @@
 import { useQuery } from '@apollo/client/react';
-import dayjs from 'dayjs';
 import _ from 'lodash';
 import { useSearchParams } from 'react-router-dom';
 
@@ -9,6 +8,7 @@ import StateBadge from '@/components/StateBadge';
 import TaskLink from '@/components/TaskLink';
 
 import { GET_TASK_TYPES } from './queries';
+import { fromUtc } from './utils';
 
 function TaskTypesPage() {
     const [searchParams] = useSearchParams();
@@ -21,7 +21,7 @@ function TaskTypesPage() {
 
     let taskTypes = getTaskTypesQuery.data.getTaskTypes;
     taskTypes = _.sortBy(taskTypes, [
-        (taskType) => (taskType.latestTaskRun ? dayjs(taskType.latestTaskRun.createdAt).unix() : -Infinity),
+        (taskType) => (taskType.latestTaskRun ? fromUtc(taskType.latestTaskRun.createdAt).unix() : -Infinity),
     ]).reverse();
 
     return (
