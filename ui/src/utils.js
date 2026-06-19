@@ -21,7 +21,7 @@ function getTaskEnd(task) {
     let taskEnd = dayjs().toDate();
     for (const stateTransition of task.stateTransitions || []) {
         if (isTerminalState(stateTransition.toState)) {
-            taskEnd = dayjs(stateTransition.stateSince).toDate();
+            taskEnd = fromUtc(stateTransition.stateSince).toDate();
             break;
         }
     }
@@ -29,7 +29,7 @@ function getTaskEnd(task) {
 }
 
 function getTaskDuration(task) {
-    const taskStart = dayjs(task.createdAt).toDate().getTime();
+    const taskStart = fromUtc(task.createdAt).toDate().getTime();
     const taskEnd = getTaskEnd(task).getTime();
     return taskEnd - taskStart;
 }
