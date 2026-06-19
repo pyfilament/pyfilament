@@ -8,10 +8,10 @@ export default defineConfig({
     starlight({
       title: "Pyfilament",
       logo: {
-        light: "./src/assets/pyfilament-logo-2.png",
-        dark: "./src/assets/pyfilament-logo-2.png",
+        light: "./src/content/docs/images/pyfilament-logo-2.png",
+        dark: "./src/content/docs/images/pyfilament-logo-2.png",
       },
-      favicon: "/images/pyfilament-mark-square.png",
+      favicon: "./src/content/docs/images/pyfilament-mark-square.png",
       social: [
         {
           icon: "github",
