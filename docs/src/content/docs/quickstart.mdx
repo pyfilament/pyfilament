@@ -10,20 +10,18 @@ import { Steps } from '@astrojs/starlight/components';
 Follow these steps to install Pyfilament, write your first task, and explore the key decorator options.
 
 <Steps>
-  1. Install Pyfilament
+1. Install Pyfilament
     Install `pyfilament` from PyPI. Pyfilament requires Python 3.14 or higher.
 
-    <CodeGroup>
-      ```bash uv
-      uv add pyfilament
-      ```
+    ```bash uv
+    uv add pyfilament
+    ```
 
-      ```bash pip
-      pip install pyfilament
-      ```
-    </CodeGroup>
+    ```bash pip
+    pip install pyfilament
+    ```
 
-  2. Write your first task
+2. Write your first task
     Import `task` from `filament` and decorate any `async def` function. Calling the function creates a managed task run that executes immediately.
 
     ```python
@@ -39,7 +37,7 @@ Follow these steps to install Pyfilament, write your first task, and explore the
 
     `@task` used without parentheses applies default configuration: one attempt, no timeout, no caching. Calling `greet("World")` returns the task run result directly — you do not need to unwrap it separately.
 
-  3. Add retries and a timeout
+3. Add retries and a timeout
     Pass configuration arguments to `@task(...)` to make the function resilient. The example below retries up to three times, waits one second between attempts, and cancels any run that exceeds ten seconds.
 
     ```python
@@ -61,7 +59,7 @@ Follow these steps to install Pyfilament, write your first task, and explore the
     | `delay` | `float` | Seconds to wait between retry attempts. Default: `0`. |
     | `backoff_base` | `float` | Exponential backoff multiplier applied to `delay`. Default: `2`. |
 
-  4. Use get_logger inside a task
+4. Use get_logger inside a task
     Call `get_logger()` from inside any task to get a logger that is automatically scoped to the current task run. Logs are captured in the task run record and visible in the observability UI.
 
     ```python
@@ -79,7 +77,7 @@ Follow these steps to install Pyfilament, write your first task, and explore the
 
     When called outside a task, `get_logger()` returns a standard logger scoped to the calling module and function — so it is always safe to use.
 
-  5. Next steps
+5. Next steps
     You have installed Pyfilament and run your first task. Explore these topics to go further.
 
     <CardGrid>
