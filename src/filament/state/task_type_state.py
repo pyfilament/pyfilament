@@ -8,7 +8,7 @@ from beartype.door import TypeHint, UnionTypeHint
 from beartype.typing import Any, Optional
 from inflection import camelize
 from pydantic import BaseModel, ConfigDict, TypeAdapter, create_model
-from pydantic.errors import PydanticInvalidForJsonSchema, PydanticSchemaGenerationError
+from pydantic.errors import PydanticInvalidForJsonSchema, PydanticSchemaGenerationError, PydanticUserError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -95,6 +95,8 @@ def _get_parameters_spec(task_type: FilamentTaskType, func_name: str | None = No
     try:
         return json.dumps(InputModel.model_json_schema(), separators=(',', ':'), default=str)
     except PydanticInvalidForJsonSchema:
+        return None
+    except PydanticUserError:
         return None
 
 
