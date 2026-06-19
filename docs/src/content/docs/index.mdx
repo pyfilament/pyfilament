@@ -27,16 +27,31 @@ Welcome to Pyfilament — a lightweight Python task framework that turns any asy
 ## Get up and running in three steps
 
 <Steps>
-  1. Install Pyfilament
+1. Install Pyfilament
     Add `pyfilament` to your project using `uv` or `pip`.
 
-  2. Decorate your function with @task
+    ```bash
+    uv add pyfilament
+    ```
+2. Decorate your function with @task
     Import `task` from `filament` and apply it to any async function.
 
-  3. Run it
+    ```python
+    from filament import task
+
+    @task(tries=3, timeout=10.0)
+    async def fetch_data(url: str) -> dict:
+        ...
+    ```
+3. Run it
     Call the function normally. Pyfilament manages execution, retries, and state tracking automatically.
 
-  </Steps>
+    ```python
+    from asyncio import run
+
+    run(fetch_data("https://api.example.com/data"))
+    ```
+</Steps>
 
 ## Feature highlights
 
