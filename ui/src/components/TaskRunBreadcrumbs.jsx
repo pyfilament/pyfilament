@@ -1,12 +1,12 @@
 import { useQuery } from '@apollo/client/react';
 import { useQuery as useReactQuery } from '@tanstack/react-query';
-import dayjs from 'dayjs';
 
 import { LinkTo } from '@/components/LinkTo';
 import StateBadge from '@/components/StateBadge';
 import TaskLink from '@/components/TaskLink';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { GET_TASK_RUN_BREADCRUMB } from '@/queries';
+import { fromUtc } from '@/utils';
 
 export default function TaskRunBreadcrumbs({ taskRun }) {
     const { refetch: refetchTaskRunBreadcrumb } = useQuery(GET_TASK_RUN_BREADCRUMB, { skip: true });
@@ -47,7 +47,7 @@ export default function TaskRunBreadcrumbs({ taskRun }) {
                         <TooltipTrigger>
                             <StateBadge state={taskRun.state} since={taskRun.stateSince} />
                         </TooltipTrigger>
-                        <TooltipContent>{dayjs(taskRun.stateSince).format('YYYY-MM-DD HH:mm:ss')}</TooltipContent>
+                        <TooltipContent>{fromUtc(taskRun.stateSince).format('YYYY-MM-DD HH:mm:ss')}</TooltipContent>
                     </Tooltip>
                     <TaskLink taskRun={taskRun} />
                 </div>

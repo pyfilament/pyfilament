@@ -1,5 +1,4 @@
 import useResizeObserver from '@react-hook/resize-observer';
-import dayjs from 'dayjs';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { TbChevronDown, TbChevronDownRight, TbChevronRight } from 'react-icons/tb';
 
@@ -8,10 +7,10 @@ import { cn } from '@/lib/utils';
 import { getSince, getTaskEnd } from '@/utils';
 
 import TaskContext from './components/TaskContext';
-import { getDurationHumanReadable } from './utils';
+import { fromUtc, getDurationHumanReadable } from './utils';
 
 const TasksTimeline = ({ taskRun, startTime = null, endTime = null, taskRunStack = null }) => {
-    const start = startTime ? startTime : dayjs(taskRun.createdAt).toDate().getTime();
+    const start = startTime ? startTime : fromUtc(taskRun.createdAt).toDate().getTime();
     const end = endTime ? endTime : getTaskEnd(taskRun).getTime();
     const spannedDuration = end - start;
 
@@ -103,7 +102,7 @@ const TaskTimelineRow = ({
     const titleRef = useRef(null);
     const parentRef = useRef(null);
 
-    const taskStart = dayjs(task.createdAt).toDate().getTime();
+    const taskStart = fromUtc(task.createdAt).toDate().getTime();
     const taskEnd = getTaskEnd(task).getTime();
     const taskDuration = taskEnd - taskStart;
 
@@ -200,7 +199,7 @@ const TaskTimelineRow = ({
                 <div className="">
                     {task.childTasks
                         .filter((childTask) => {
-                            const childTaskStart = dayjs(childTask.createdAt).toDate().getTime();
+                            const childTaskStart = fromUtc(childTask.createdAt).toDate().getTime();
                             return childTaskStart < maxEnd;
                         })
                         .map((childTask) => (

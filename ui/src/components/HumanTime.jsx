@@ -1,7 +1,6 @@
-import dayjs from 'dayjs';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { getSince } from '@/utils';
+import { fromUtc, getSince } from '@/utils';
 
 function HumanTime({ timestamp, relativeTo = null }) {
     if (/^\d+$/.test(timestamp)) {
@@ -21,7 +20,7 @@ function HumanTime({ timestamp, relativeTo = null }) {
             <TooltipTrigger>
                 <div>{readableTime}</div>
             </TooltipTrigger>
-            <TooltipContent>{dayjs(timestamp).format('YYYY-MM-DD HH:mm:ss')}</TooltipContent>
+            <TooltipContent>{fromUtc(timestamp).format('YYYY-MM-DD HH:mm:ss')}</TooltipContent>
         </Tooltip>
     );
 }
