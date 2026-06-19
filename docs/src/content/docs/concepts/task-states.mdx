@@ -2,6 +2,8 @@
 title: "task-states"
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Pyfilament tracks the lifecycle of every task run through a series of states. Understanding these states helps you monitor task health, diagnose failures, and build reliable retry and alerting strategies.
 
 ## State reference
@@ -28,9 +30,9 @@ The following states are **terminal** — once a task run enters one of them, it
 
 The `created`, `running`, and `retrying` states are transient. A run in any of those states is still active and will eventually reach a terminal state.
 
-<Note>
+<Aside type="tip">
   `timeout` is **not** a terminal state. When a run times out, Pyfilament raises a `TimeoutError` internally, which is then caught by the failure handler and transitions the run to `failure`. If `TimeoutError` is included in `retry_exceptions`, the run instead transitions to `retrying` and the next attempt begins. The `timeout` state is an intermediate signal, not a final outcome.
-</Note>
+</Aside>
 
 ## State transitions
 
@@ -91,6 +93,6 @@ query {
 }
 ```
 
-<Tip>
+<Aside type="tip">
   Use the Pyfilament dashboard to visualise state transitions on a timeline for any task run. The timeline view makes it easy to spot long `retrying` gaps, unexpected `timeout` events, or tasks stuck in `running`.
-</Tip>
+</Aside>

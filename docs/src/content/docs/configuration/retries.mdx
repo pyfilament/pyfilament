@@ -2,6 +2,8 @@
 title: "retries"
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Pyfilament retries failed tasks automatically. Configure the number of attempts, the delay between retries, exponential backoff, and which exceptions trigger a retry — all on the `@task` decorator.
 
 ## Basic retry configuration
@@ -77,6 +79,6 @@ result = await fetch_data(url="...", tries=1)  # disable retries for this call
   Exception types that are never retried, even if they appear in `retry_exceptions`. Useful for skipping retries on unrecoverable errors such as `ValueError`.
 </ParamField>
 
-<Note>
+<Aside type="tip">
   anyio cancellation is never retried, regardless of what you set in `retry_exceptions`. A cancelled task raises immediately without further attempts.
-</Note>
+</Aside>

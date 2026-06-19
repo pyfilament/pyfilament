@@ -2,6 +2,8 @@
 title: "task-states"
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 The `TaskState` enum defines all possible states for a Pyfilament task run. Import and use it to filter queries, assert on task run state in tests, or branch logic based on a run's outcome.
 
 ## Import
@@ -35,9 +37,9 @@ from filament.constants import TaskState
 TaskState.TERMINAL = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.CANCELLED, TaskState.CACHED}
 ```
 
-<Note>
+<Aside type="tip">
   `TaskState.TIMEOUT` is **not** in `TERMINAL`. A timed-out task may transition to `RETRYING` if retries are configured, and eventually to `SUCCESS` or `FAILURE`.
-</Note>
+</Aside>
 
 ---
 

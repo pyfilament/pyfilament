@@ -2,6 +2,8 @@
 title: "caching"
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Pyfilament can cache task results in Redis, returning the cached value on subsequent calls with identical inputs instead of re-executing the function. Enable caching to avoid redundant work on expensive or slow operations.
 
 ## Enable caching
@@ -70,6 +72,6 @@ async def fetch_report(report_id: str, verbose: bool = False) -> dict:
   Bypass the cache for a single call, re-execute the function, and write the new result back to the cache. Pass as a keyword argument at call time.
 </ParamField>
 
-<Note>
+<Aside type="tip">
   Caching requires a running Redis instance. Pyfilament uses Redis to store and retrieve cached results.
-</Note>
+</Aside>

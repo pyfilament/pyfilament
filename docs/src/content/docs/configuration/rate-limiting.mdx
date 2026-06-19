@@ -2,6 +2,8 @@
 title: "rate-limiting"
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Pyfilament uses a Redis-backed token bucket to limit how frequently a task can execute. Set `rate_limit` to cap the number of executions per second across all workers.
 
 ## Setting a rate limit
@@ -38,9 +40,9 @@ Rate limits are scoped to the task type, identified by the function's address. T
   Maximum executions per second across all workers. Uses a token-bucket algorithm with a burst capacity of `rate_limit × 4` tokens. Set to `None` to allow unlimited execution rate.
 </ParamField>
 
-<Note>
+<Aside type="tip">
   Rate limiting requires a running Redis instance. Pyfilament uses Redis to track token bucket state across workers.
-</Note>
+</Aside>
 
 <Warning>
   Rate limiting introduces wait time before a task executes. If you also set a `timeout`, the timeout applies only to the function execution itself and does not include time spent waiting for a rate-limit token. However, if waits are consistently long, consider relaxing the rate limit or increasing the timeout to avoid tasks timing out before they ever run.

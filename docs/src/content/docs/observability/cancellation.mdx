@@ -2,6 +2,8 @@
 title: "cancellation"
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Pyfilament supports graceful task cancellation. Cancel a running task from the same process, from a remote process using its UUID, or directly from the dashboard. Cancellation is cooperative — the task must reach an `await` point to respond to the signal.
 
 ## Cancel from the same process
@@ -84,6 +86,6 @@ After a cancellation signal is delivered and the task responds, it transitions t
 
 When a parent task is cancelled, any in-flight subtasks it is currently awaiting are also cancelled. The cancellation propagates down the subtask tree so the entire execution branch terminates cleanly, rather than leaving orphaned child runs consuming resources.
 
-<Note>
+<Aside type="tip">
   Cancellation is cooperative. The task must be at an `await` point — sleeping, awaiting I/O, or waiting between subtasks — to respond to the cancellation signal. Tasks executing tight CPU-bound loops without any `await` points may not cancel immediately, because Python cannot interrupt synchronous code mid-execution. Structure long CPU work across multiple `await` points to keep your tasks cancellation-responsive.
-</Note>
+</Aside>

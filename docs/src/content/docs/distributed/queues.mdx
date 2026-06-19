@@ -2,6 +2,8 @@
 title: "queues"
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Pyfilament uses Redis Streams as its distributed task queue. Each `@task` type gets a dedicated queue, and messages persist in Redis regardless of whether any workers are running at the time of submission.
 
 ## Queue architecture
@@ -38,6 +40,6 @@ result = await task_run
 
 Pyfilament automatically cleans up stale pending messages every time a new task is enqueued. Any message that has been pending for more than **3 days** is acknowledged and removed. After stale messages are cleared, the queue is trimmed to match the oldest remaining pending message, keeping Redis memory usage bounded.
 
-<Note>
+<Aside type="tip">
   The queue requires Redis. Set the `REDIS_URL` environment variable before starting your workers or API server.
-</Note>
+</Aside>

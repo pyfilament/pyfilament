@@ -2,6 +2,8 @@
 title: "workers"
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Pyfilament workers are long-running processes that pull tasks from a Redis Streams queue and execute them. You can run multiple workers for horizontal scaling without any additional configuration — Redis handles the coordination.
 
 ## How workers work
@@ -75,6 +77,6 @@ async for chunk in task_run:
 
 To scale horizontally, run the same worker script in multiple processes or on multiple machines. Redis consumer groups distribute tasks automatically — each task is delivered to exactly one worker regardless of how many are running. Add or remove worker processes at any time without downtime or reconfiguration.
 
-<Note>
+<Aside type="tip">
   Workers require a running Redis instance. Set the `REDIS_URL` environment variable to point at your Redis server before starting a worker or calling `.request()`.
-</Note>
+</Aside>

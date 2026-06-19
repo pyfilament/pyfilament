@@ -2,6 +2,8 @@
 title: "dashboard"
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Pyfilament includes a built-in web dashboard for monitoring your tasks. Browse all task types, inspect individual runs, view execution timelines, read structured logs, and cancel running tasks — all from the browser. The dashboard is served alongside the Pyfilament API server and is available at your server's address.
 
 ## Dashboard pages
@@ -32,6 +34,6 @@ The detail panel shows everything recorded for a selected task run:
 
 The logs panel beneath the detail panel shows all log entries for the selected run and its subtasks, sorted chronologically so you see a unified event stream across the entire execution tree.
 
-<Tip>
+<Aside type="tip">
   You can navigate to a task run directly by UUID: `/task-run/{uuid}`. The dashboard resolves the UUID to its numeric ID automatically.
-</Tip>
+</Aside>

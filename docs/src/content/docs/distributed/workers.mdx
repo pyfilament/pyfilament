@@ -2,6 +2,8 @@
 title: "workers"
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 A Pyfilament worker is a long-running process that dequeues and executes tasks from Redis. Run one or many workers to process tasks in parallel — each worker instance is independent and self-registers automatically.
 
 ## Start a worker
@@ -94,6 +96,6 @@ asyncio.run(main())
 
 This is equivalent to running two separate worker processes but in a single Python process, which can simplify deployment when your task types are lightweight.
 
-<Note>
+<Aside type="tip">
   Ensure your worker process imports the same `@task` functions that will receive queue messages. Workers look up tasks by function address, so the import path must match the one used when the task type was registered.
-</Note>
+</Aside>

@@ -4,6 +4,8 @@ sidebarTitle: "Installation"
 description: "Install Pyfilament via uv or pip, set your FILAMENT_REDIS_HOST environment variables, and verify your setup before writing your first task."
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Pyfilament is published to [PyPI](https://pypi.org/project/pyfilament/) and installs with a single command. It requires **Python 3.14 or higher**. Redis is required for distributed workers, result caching, and the observability dashboard — but you can run local tasks without it.
 
 ## Install Pyfilament
@@ -16,18 +18,18 @@ uv add pyfilament
 pip install pyfilament
 ```
 
-<Tip>
+<Aside type="tip">
   Use `uv` for the fastest install experience. `uv` manages Python versions automatically, so it will download and pin Python 3.14 for your project if you do not already have it.
-</Tip>
+</Aside>
 
 ## Requirements
 
 - **Python 3.14 or higher** — Pyfilament targets CPython 3.14 and will not install on earlier versions.
 - **Redis 7+** — Required for distributed workers, result caching, rate limiting, and the observability dashboard.
 
-<Note>
+<Aside type="tip">
   Local-only tasks — those without distributed workers or caching — work without Redis. You only need Redis when you enable `cache=True`, `rate_limit`, `max_concurrent` with remote workers, or the observability server.
-</Note>
+</Aside>
 
 ## Configure Redis
 

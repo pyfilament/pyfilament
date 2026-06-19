@@ -4,6 +4,8 @@ sidebarTitle: "Tasks"
 description: "A Pyfilament task is an async Python function decorated with @task, adding retries, timeouts, caching, rate limiting, and distributed execution capabilities."
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 A Pyfilament task is an async Python function decorated with `@task`. The decorator transforms it into a `FilamentRemoteTaskType` — a managed task type that tracks state, handles failures, and can run locally or on distributed workers via Redis Streams.
 
 ## Defining a task
@@ -105,8 +107,8 @@ Pyfilament forwards each yielded value through an in-memory stream as the genera
 | `await my_task.request(*args, **kwargs)` | Enqueue the task for a remote worker and return a `FilamentRemoteTaskRun`. |
 | `await my_task.serve(shutdown_event=None)` | Start a long-running worker loop that dequeues and executes tasks from Redis Streams. Pass an `anyio.Event` to support graceful shutdown. |
 
-<Note>
+<Aside type="tip">
   Task functions must be async — either a coroutine (`async def`) or an async
   generator (`async def` with `yield`). Synchronous functions are not supported
   and will raise an `AssertionError` at decoration time.
-</Note>
+</Aside>
