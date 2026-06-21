@@ -26,7 +26,11 @@ async def say_hello():
 
 async def main():
     result = await say_hello()
-    print('result:', result)
+    print(result)
+
+
+async def test_hello_world() -> None:
+    assert await say_hello() == 'Hello, world!'
 
 
 if __name__ == '__main__':

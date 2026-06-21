@@ -49,6 +49,11 @@ dev = [
     "coverage>=7.14.1",
     "mock>=5.2.0",
 ]
+examples = [
+    "anthropic>=0.69",
+    "openai-agents>=0.2",
+    "requests>=2.34.2",
+]
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]

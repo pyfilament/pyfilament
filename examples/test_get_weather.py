@@ -110,5 +110,9 @@ async def main():
         print('\n')
 
 
+async def test_get_weather() -> None:
+    await main()
+
+
 if __name__ == '__main__':
     asyncio.run(main())

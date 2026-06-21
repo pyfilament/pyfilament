@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from .app import analyze_page, register_task_types
+from .test_app import analyze_page, register_task_types
 
 logging.getLogger().setLevel(logging.DEBUG)
 

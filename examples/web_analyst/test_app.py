@@ -4,6 +4,7 @@ import logging
 import os
 import re
 
+import pytest
 import requests
 from agents import Agent, RunContextWrapper, Runner, RunResult, function_tool
 from pydantic import BaseModel
@@ -12,6 +13,8 @@ from filament import get_logger, task
 from filament.db.session import async_session_scope
 from filament.redis.semaphore import RedisSemaphore
 from filament.state.task_type_state import upsert_task_type_state
+
+pytestmark = pytest.mark.examples
 
 MODEL = os.getenv('OPENAI_MODEL', 'gpt-5.4')
 logging.getLogger().setLevel(logging.DEBUG)
@@ -176,7 +179,7 @@ async def register_task_types() -> None:
 
 
 @task
-async def run_web_analyst_pipeline(urls: list[str]) -> None:
+async def run_web_analyst_pipeline(urls: list[str]) -> list[PageBrief]:
     await register_task_types()
     print('Pipeline started...' + '\n' + 'Check logs in the filament UI for progress.')
     logger = get_logger()
@@ -206,3 +209,8 @@ DEFAULT_URLS = [
     'https://simonwillison.net',
     'https://example.com',
 ]
+
+
+async def test_run_web_analyst_pipeline() -> None:
+    briefs = await run_web_analyst_pipeline(DEFAULT_URLS)
+    assert briefs and briefs[0].title
