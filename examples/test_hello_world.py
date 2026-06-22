@@ -1,3 +1,10 @@
+"""The simplest pyfilament example: two @tasks calling each other in-process.
+
+Run it from the repo root:
+
+    uv run pytest examples/test_hello_world.py
+"""
+
 import asyncio
 import logging
 

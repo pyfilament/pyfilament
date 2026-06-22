@@ -1,13 +1,10 @@
-"""A minimal filament example: a streaming weather agent powered by the Anthropic API.
+"""A minimal pyfilament example: a streaming weather agent powered by the Anthropic API.
 
-No queue and no worker — the @task runs in-process. It runs a tool-use loop (calling
-the get_weather tool), then streams the final answer token by token through filament's
-async-generator support. Tool calls execute but aren't printed.
+Run it from the repo root (requires: `anthropic`):
 
-Run it from the repo root (requires `pip install anthropic`):
-
+    uv sync --group examples
     export ANTHROPIC_API_KEY=sk-ant-...
-    python -m examples.get_weather
+    uv run pytest examples/test_get_weather.py -s
 """
 
 from __future__ import annotations

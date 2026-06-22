@@ -1,3 +1,16 @@
+"""A pyfilament example: a multi-agent web-page analyzer built on the openai-agents SDK.
+
+Each step is a pyfilament @task: fetch a page, classify it, then route to a specialist
+agent that returns a structured PageBrief. analyze_page runs with max_concurrent=4.
+Progress is visible in the pyfilament dashboard.
+
+Run it from the repo root (requires: `openai-agents`, `requests`):
+
+    uv sync --group examples
+    export OPENAI_API_KEY=sk-...
+    uv run pytest examples/web_analyst/test_web_analyst.py -s
+"""
+
 import asyncio
 import json
 import logging
@@ -156,11 +169,11 @@ async def analyze_page(url: str) -> PageBrief:
 
 @task
 async def run_web_analyst_pipeline(urls: list[str]) -> list[PageBrief]:
-    print('Pipeline started...' + '\n' + 'Check logs in the filament UI for progress.')
+    print('Pipeline started...' + '\n' + 'Check logs in the pyfilament dashboard for progress.')
     logger = get_logger()
-    logger.info('Submitting %d url(s) to the queue …', len(urls))
+    logger.info('Analyzing %d url(s) …', len(urls))
     results = await asyncio.gather(*[analyze_page(url) for url in urls])
-    logger.info('Runs complete.Run it again — summaries come straight from the cache.')
+    logger.info('Runs complete.')
     return [PageBrief.model_validate(r) for r in results]
 
 
