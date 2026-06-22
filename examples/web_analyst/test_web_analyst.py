@@ -4,7 +4,6 @@ import logging
 import os
 import re
 
-import anyio
 import requests
 from agents import Agent, RunContextWrapper, Runner, RunResult, function_tool
 from pydantic import BaseModel
@@ -160,10 +159,8 @@ async def run_web_analyst_pipeline(urls: list[str]) -> list[PageBrief]:
     print('Pipeline started...' + '\n' + 'Check logs in the filament UI for progress.')
     logger = get_logger()
     logger.info('Submitting %d url(s) to the queue …', len(urls))
-    runs = await asyncio.gather(*(analyze_page.request(url) for url in urls))
-    results = await asyncio.gather(*runs)
+    results = await asyncio.gather(*[analyze_page(url) for url in urls])
     logger.info('Runs complete.Run it again — summaries come straight from the cache.')
-    # Queue results cross Redis as plain dicts (JSON round-trip), so rebuild the model.
     return [PageBrief.model_validate(r) for r in results]
 
 
@@ -173,12 +170,6 @@ def log_brief(url: str, b: PageBrief) -> None:
     get_logger().info(json.dumps(payload, indent=2, ensure_ascii=False))
 
 
-async def _run_web_analyst_pipeline(shutdown_event: anyio.Event):
-    briefs = await run_web_analyst_pipeline(DEFAULT_URLS)
-    assert briefs and briefs[0].title
-    shutdown_event.set()
-
-
 DEFAULT_URLS = [
     'https://news.ycombinator.com',
     'https://lite.cnn.com',
@@ -186,7 +177,5 @@ DEFAULT_URLS = [
 
 
 async def test_run_web_analyst_pipeline() -> None:
-    async with anyio.create_task_group() as tg:
-        shutdown_event = anyio.Event()
-        tg.start_soon(analyze_page.serve, shutdown_event)
-        tg.start_soon(_run_web_analyst_pipeline, shutdown_event)
+    briefs = await run_web_analyst_pipeline(DEFAULT_URLS)
+    assert briefs and briefs[0].title
