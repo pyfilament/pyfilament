@@ -4,17 +4,12 @@ import logging
 import os
 import re
 
-import pytest
+import anyio
 import requests
 from agents import Agent, RunContextWrapper, Runner, RunResult, function_tool
 from pydantic import BaseModel
 
 from filament import get_logger, task
-from filament.db.session import async_session_scope
-from filament.redis.semaphore import RedisSemaphore
-from filament.state.task_type_state import upsert_task_type_state
-
-pytestmark = pytest.mark.examples
 
 MODEL = os.getenv('OPENAI_MODEL', 'gpt-5.4')
 logging.getLogger().setLevel(logging.DEBUG)
@@ -125,14 +120,14 @@ async def run_agent(agent: Agent, prompt: str, context: PageContext | None = Non
         u = result.context_wrapper.usage
         logger.info('Token usage: total=%s, input=%s, output=%s', u.total_tokens, u.input_tokens, u.output_tokens)
     except Exception as e:
-        logger.error('Error getting token usage: %s', e)
+        logger.exception('Error getting token usage: %s', e)
     return result
 
 
 ### TASKS
 
 
-@task(tries=3, delay=1, timeout=30, rate_limit=2)
+@task
 async def fetch_page(url: str) -> str:
     get_logger().info('GET %s', url)
     response = requests.get(url, timeout=10)
@@ -140,7 +135,7 @@ async def fetch_page(url: str) -> str:
     return response.text
 
 
-@task(tries=3, delay=2, cache=True, cache_ttl=3600)
+@task
 async def summarize(url: str, html: str) -> PageBrief:
     prompt = build_prompt(url, html)
     classify = await run_agent(classify_agent, prompt)
@@ -160,27 +155,8 @@ async def analyze_page(url: str) -> PageBrief:
     return brief
 
 
-### DISTRIBUTED RUN
-# Two processes share a Redis queue. Run both from the repo root:
-#   Terminal 1:  python -m examples.web_analyst.worker   # serve forever
-#   Terminal 2:  python -m examples.web_analyst          # submit jobs
-
-
-TASK_TYPES = [extract_links, run_agent, fetch_page, summarize, analyze_page]
-
-
-async def register_task_types() -> None:
-    # Create each @task type's DB row once, serially, under a lock so concurrent
-    # first-time runs never race to insert the same row.
-    async with RedisSemaphore(name='web_analyst:register_task_types', max_leases=1, ttl=60):
-        async with async_session_scope() as session:
-            for task_type in TASK_TYPES:
-                await upsert_task_type_state(session, task_type)
-
-
 @task
 async def run_web_analyst_pipeline(urls: list[str]) -> list[PageBrief]:
-    await register_task_types()
     print('Pipeline started...' + '\n' + 'Check logs in the filament UI for progress.')
     logger = get_logger()
     logger.info('Submitting %d url(s) to the queue …', len(urls))
@@ -197,20 +173,20 @@ def log_brief(url: str, b: PageBrief) -> None:
     get_logger().info(json.dumps(payload, indent=2, ensure_ascii=False))
 
 
+async def _run_web_analyst_pipeline(shutdown_event: anyio.Event):
+    briefs = await run_web_analyst_pipeline(DEFAULT_URLS)
+    assert briefs and briefs[0].title
+    shutdown_event.set()
+
+
 DEFAULT_URLS = [
     'https://news.ycombinator.com',
     'https://lite.cnn.com',
-    'https://text.npr.org',
-    'https://docs.python.org/3/',
-    'https://fastapi.tiangolo.com',
-    'https://react.dev',
-    'https://peps.python.org/pep-0008/',
-    'https://www.rfc-editor.org/rfc/rfc9110.html',
-    'https://simonwillison.net',
-    'https://example.com',
 ]
 
 
 async def test_run_web_analyst_pipeline() -> None:
-    briefs = await run_web_analyst_pipeline(DEFAULT_URLS)
-    assert briefs and briefs[0].title
+    async with anyio.create_task_group() as tg:
+        shutdown_event = anyio.Event()
+        tg.start_soon(analyze_page.serve, shutdown_event)
+        tg.start_soon(_run_web_analyst_pipeline, shutdown_event)

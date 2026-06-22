@@ -12,8 +12,8 @@ Run it from the repo root (requires `pip install anthropic`):
 
 from __future__ import annotations
 
-import asyncio
 import logging
+from collections.abc import AsyncGenerator
 
 from anthropic import AsyncAnthropic
 
@@ -58,7 +58,7 @@ async def get_weather(city: str) -> str:
 # An async-generator @task: yielded values stream to the caller via `async for`.
 # Yields answer tokens (str), then the final message (dict) for the tool loop.
 @task
-async def generate_response(messages: list[dict]):
+async def generate_response(messages: list[dict]) -> AsyncGenerator[str | dict, None]:
     async with client.messages.stream(model=MODEL, max_tokens=1024, tools=[WEATHER_TOOL], messages=messages) as stream:
         async for text in stream.text_stream:
             yield text
@@ -70,7 +70,7 @@ async def generate_response(messages: list[dict]):
 # Consumes the generate_response stream with `async for` and re-yields tokens, so it's
 # itself a streaming @task. Each get_weather and generate_response call is its own run.
 @task
-async def answer_weather_question(question: str):
+async def answer_weather_question(question: str) -> AsyncGenerator[str, None]:
     get_logger().info('Question: %s', question)
     messages: list[dict] = [{'role': 'user', 'content': question}]
     for _ in range(MAX_TURNS):
@@ -98,7 +98,7 @@ async def answer_weather_question(question: str):
 
 
 @task
-async def main():
+async def print_weather_answers() -> None:
     questions = [
         'What is the weather in Paris?',
         'Should I bring sunglasses in Cairo or Tokyo right now?',
@@ -110,9 +110,5 @@ async def main():
         print('\n')
 
 
-async def test_get_weather() -> None:
-    await main()
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
+async def test_get_weather():
+    await print_weather_answers()
