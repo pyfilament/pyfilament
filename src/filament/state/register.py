@@ -2,10 +2,9 @@ from typing import AsyncGenerator
 
 import anyio
 from beartype import beartype
-from filament.constants import DEFAULT_MONITOR_INTERVAL
-from filament.types.task_run import FilamentTaskRun
 from sqlalchemy import select
 
+from filament.constants import DEFAULT_MONITOR_INTERVAL
 from filament.db.models import TaskRun, TaskType
 from filament.db.session import async_session_scope
 from filament.logic.call_stack import peek_task_run
@@ -19,6 +18,7 @@ from filament.state.task_run_state import (
     transition_state,
 )
 from filament.state.task_type_state import upsert_task_type_state
+from filament.types.task_run import FilamentTaskRun
 
 
 @beartype
@@ -34,15 +34,20 @@ def register_task_events(events: EventManager) -> None:
 @beartype
 async def initialize_task_run_state(task_run: FilamentTaskRun) -> None:
     # lock so that we're not interrupted if initialize_task_run_state is called concurrently
-    semaphore = RedisSemaphore(
+    task_type_semaphore = RedisSemaphore(
+        name=f'filament_task_type:initialize_task_run_state:{task_run.type.func_address}', max_leases=1, ttl=60
+    )
+    task_run_semaphore = RedisSemaphore(
         name=f'filament_task_run:initialize_task_run_state:{task_run.uuid}', max_leases=1, ttl=60
     )
-    async with semaphore:
+    async with task_type_semaphore:
         async with async_session_scope() as session:
             task_type_statement = select(TaskType).where(TaskType.func_address == task_run.type.func_address)
             task_type_row = (await session.execute(task_type_statement)).scalars().one_or_none()
             if task_type_row is None:
                 task_type_row = await upsert_task_type_state(session, task_run.type)
+    async with task_run_semaphore:
+        async with async_session_scope() as session:
             task_run_statement = select(TaskRun).where(TaskRun.task_uuid == task_run.uuid)
             task_run_row = (await session.execute(task_run_statement)).scalars().one_or_none()
             if task_run_row is None:
