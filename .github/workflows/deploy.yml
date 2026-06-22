@@ -1,0 +1,41 @@
+name: deploy
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+jobs:
+  deploy-kustomize:
+    permissions:
+      packages: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v6
+    - name: Install kustomize
+      run: |
+        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+    - name: Update kustomize for pyfilament-api
+      working-directory: ./kustomize/apps/pyfilament-api
+      run: |
+        kustomize edit set image "ghcr.io/pyfilament/pyfilament=:${{ github.event.release.tag_name }}"
+    - name: Update kustomize for pyfilament-ui
+      working-directory: ./kustomize/apps/pyfilament-ui
+      run: |
+        kustomize edit set image "ghcr.io/pyfilament/pyfilament-ui=:${{ github.event.release.tag_name }}"
+    - name: Update kustomize for pyfilament-website
+      working-directory: ./kustomize/apps/pyfilament-website
+      run: |
+        kustomize edit set image "ghcr.io/pyfilament/pyfilament-website=:${{ github.event.release.tag_name }}"
+    - name: Create pull request
+      uses: peter-evans/create-pull-request@v7
+      with:
+        add-paths: kustomize
+        title: '[${{ needs.get_release_tag_and_sha.outputs.release_tag }}] ${{ matrix.environments }} release'
+        commit-message: '[${{ needs.get_release_tag_and_sha.outputs.release_tag }}-${{ needs.get_release_tag_and_sha.outputs.short_sha }}] ${{ matrix.environments }} release'
+        base: main
+        branch: gha/deploy-${{ matrix.environments }}-latest
+        body: |
+          This pull request was automatically created by ${{ github.workflow }} workflow:
+          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        labels: cicd
