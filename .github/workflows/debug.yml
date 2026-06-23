@@ -1,12 +1,53 @@
-# this workflow exists to debug workflow runs in branches and is meant to be a placeholder in the main 
-# branch so the action shows up on github
-name: debug
+name: deploy
 on:
   workflow_dispatch:
+  release:
+    types: [published]
 jobs:
-  debug:
+  deploy-kustomize:
+    permissions:
+      packages: write
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - name: Debug
-        run: |
-          echo "Debug workflow"
+    - name: Check out repository
+      uses: actions/checkout@v6
+    - name: Get release tag
+      id: get_release_tag
+      run: |
+        if [ -z "${{ github.event.release.tag_name }}" ]; then
+          RELEASE_TAG=$(gh release view --json tagName -q .tagName)
+        else
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+        fi
+        echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+      env:
+        GH_TOKEN: ${{ github.token }}
+    - name: Install kustomize
+      run: |
+        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+    - name: Update kustomize for pyfilament-api
+      working-directory: ./kustomize/apps/pyfilament-api
+      run: |
+        kustomize edit set image "ghcr.io/pyfilament/pyfilament=:${{ steps.get_release_tag.outputs.release_tag }}"
+    - name: Update kustomize for pyfilament-ui
+      working-directory: ./kustomize/apps/pyfilament-ui
+      run: |
+        kustomize edit set image "ghcr.io/pyfilament/pyfilament-ui=:${{ steps.get_release_tag.outputs.release_tag }}"
+    - name: Update kustomize for pyfilament-website
+      working-directory: ./kustomize/apps/pyfilament-website
+      run: |
+        kustomize edit set image "ghcr.io/pyfilament/pyfilament-website=:${{ steps.get_release_tag.outputs.release_tag }}"
+    - name: Create pull request
+      uses: peter-evans/create-pull-request@v7
+      with:
+        add-paths: kustomize
+        title: '[${{ steps.get_release_tag.outputs.release_tag }}] release'
+        commit-message: '[${{ steps.get_release_tag.outputs.release_tag }}-${{ github.sha }}] release'
+        base: main
+        branch: gha/deploy-latest
+        body: |
+          This pull request was automatically created by ${{ github.workflow }} workflow:
+          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        labels: cicd
