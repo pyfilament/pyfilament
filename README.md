@@ -26,3 +26,35 @@ async def foo():
 run(foo())
 EOF
 ```
+
+# Optional Dependencies
+
+pyfilament makes use of redis for task queueing, and a SQL database for state tracking. Both of these dependencies are optional, but will enable user-facing features.
+
+## Redis (queueing)
+
+Enables distributed workloads using queues and workers (`my_task.request()` and `my_task.serve()`). Redis is also required for caching. By default, pyfilament will attempt to connect to `localhost:6379`. You can override it with
+
+```
+export FILAMENT_REDIS_HOST=new_redis_host
+export FILAMENT_REDIS_PORT=6379
+```
+
+## State tracking
+
+Enables frontend ui dashboard, API-triggered task cancellations, and STONITH. By default, pyfilament will use a local sqlite database. You can override it with:
+
+```
+export FILAMENT_DB_URI=postgresql+asyncpg://username:password@hostname:5432/dbname
+```
+
+## Disabling optional dependencies
+
+The default `@task` decorator (`from filament import task`) assumes that both are enabled. There's plans to make disabling optional dependencies easier in a future release, but for now look in these tests for examples of how run without optional dependencies:
+
+|test name|queueing|state tracking|
+|---|---|---|
+|[tests/test_task.py](tests/test_task.py)|disabled|disabled|
+|[tests/test_queue.py](tests/test_queue.py)|enabled|disabled|
+|[tests/test_cancel_state.py](tests/test_cancel_state.py)|disabled|enabled|
+|default `@task`|enabled|enabled|
