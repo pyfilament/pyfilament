@@ -41,6 +41,10 @@ jobs:
       working-directory: ./kustomize/apps/pyfilament-website
       run: |
         kustomize edit set image "ghcr.io/pyfilament/pyfilament-website=:${{ steps.get_release_tag.outputs.release_tag }}"
+    - name: Update kustomize for pyfilament-examples
+      working-directory: ./kustomize/apps/pyfilament-examples
+      run: |
+        kustomize edit set image "ghcr.io/pyfilament/pyfilament=:${{ steps.get_release_tag.outputs.release_tag }}"
     - name: Create pull request
       uses: peter-evans/create-pull-request@v7
       with:

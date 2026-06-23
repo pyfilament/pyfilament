@@ -11,4 +11,4 @@ resources:
 - cronjob.yaml
 images:
 - name: ghcr.io/pyfilament/pyfilament
-  newTag: 0.0.17
+  newTag: 0.0.18
