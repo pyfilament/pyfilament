@@ -2,11 +2,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 labels:
-- pairs:
-    app: pyfilament-api
-  includeSelectors: true
+- includeSelectors: true
   includeTemplates: true
+  pairs:
+    app: pyfilament-api
 
 resources:
 - deployment.yaml
 - service.yaml
+images:
+- name: ghcr.io/pyfilament/pyfilament
+  newTag: 0.0.17
