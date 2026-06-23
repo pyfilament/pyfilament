@@ -45,8 +45,8 @@ jobs:
       uses: peter-evans/create-pull-request@v7
       with:
         add-paths: kustomize
-        title: '[${{ steps.get_release_tag.outputs.release_tag }}] release'
-        commit-message: '[${{ steps.get_release_tag.outputs.release_tag }}-${{ github.sha }}] release'
+        title: '[${{ steps.get_release_tag.outputs.release_tag }}] deploy'
+        commit-message: '[${{ steps.get_release_tag.outputs.release_tag }}] update kustomize version number'
         base: main
         branch: gha/deploy-latest
         body: |
