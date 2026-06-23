@@ -17,10 +17,10 @@ lint:
 	uv run ruff check src/ --ignore F401,E402,E731,F841,F403,E712,E722,E711,F541
 
 test:
-	uv run pytest
+	uv run pytest tests/
 
 test-coverage:
-	uv run coverage run -m pytest
+	uv run coverage run -m pytest tests/
 
 coverage-clean:
 	rm -rf .coverage*

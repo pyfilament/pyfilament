@@ -52,7 +52,7 @@ jobs:
       run: uv run alembic upgrade head
 
     - name: Run pytest
-      run: uv run pytest
+      run: uv run pytest tests/
 
     - name: Create pull request
       uses: peter-evans/create-pull-request@v7
