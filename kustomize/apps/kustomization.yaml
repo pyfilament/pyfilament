@@ -9,3 +9,4 @@ resources:
 - pyfilament-website
 - pyfilament-redis
 - pyfilament-psql
+- pyfilament-examples
