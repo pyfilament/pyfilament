@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pyfilament-examples
+spec:
+  schedule: "0 */6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: pyfilament-examples
+              image: ghcr.io/pyfilament/pyfilament:latest
+              env:
+                - name: FILAMENT_REDIS_HOST
+                  value: pyfilament-redis
+                - name: FILAMENT_DB_URI
+                  value: postgresql+asyncpg://postgres:postgres@pyfilament-psql:5432/pyfilament
+              command: ["uv", "run", "pytest", "examples/test_hello_world.py"]
+          restartPolicy: Never
