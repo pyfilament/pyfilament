@@ -1,0 +1,12 @@
+# this workflow exists to debug workflow runs in branches and is meant to be a placeholder in the main 
+# branch so the action shows up on github
+name: debug
+on:
+  workflow_dispatch:
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug
+        run: |
+          echo "Debug workflow"
